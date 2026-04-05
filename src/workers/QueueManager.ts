@@ -13,6 +13,20 @@ import { FirebaseGuardian } from "../utils/FirebaseGuardian";
 import { MARCH_2026_CLOSURES } from "../data/march2026Closures";
 import { BotManager } from "../services/BotManager";
 
+// ── Disney API Integration ───────────────────────────────────────────
+import {
+    EndpointRegistry,
+    CircuitBreaker,
+    HumanMimicry,
+    SessionManager,
+    DisneyAPIClient,
+    DisneyAuthClient,
+    HealthProbe,
+    BG1SyncEngine,
+    ThemeParksWikiClient,
+    HistoricalAnalytics,
+} from '../services/disney';
+
 const connection = new Redis(env.REDIS_URL, {
     maxRetriesPerRequest: null,
 });
@@ -27,7 +41,27 @@ const vqSniper = new VirtualQueueSniper(agentQueue);
 const waitMagic = new WaitMagicEngine(agentQueue);
 const telemetryCollector = new TelemetryCollector();
 
-export { diningSniper, vqSniper, waitMagic, telemetryCollector }; // Export for use in AgentController
+// ── Disney Module Initialization ─────────────────────────────────────
+const endpointRegistry = new EndpointRegistry();
+const circuitBreaker = new CircuitBreaker();
+const humanMimicry = new HumanMimicry({
+    minJitterMs: env.DISNEY_API_JITTER_MIN_MS,
+    maxJitterMs: env.DISNEY_API_JITTER_MAX_MS,
+    maxRpsPerSkipper: env.DISNEY_API_MAX_RPS_PER_SKIPPER,
+});
+const sessionManager = new SessionManager(humanMimicry);
+const disneyAuthClient = new DisneyAuthClient(sessionManager);
+const disneyAPIClient = new DisneyAPIClient(endpointRegistry, sessionManager, circuitBreaker, humanMimicry);
+const themeParksWiki = new ThemeParksWikiClient();
+const healthProbe = new HealthProbe(disneyAPIClient, sessionManager, circuitBreaker, themeParksWiki);
+const bg1Sync = new BG1SyncEngine(endpointRegistry);
+const historicalAnalytics = new HistoricalAnalytics();
+
+export {
+    diningSniper, vqSniper, waitMagic, telemetryCollector,
+    disneyAPIClient, disneyAuthClient, sessionManager, endpointRegistry,
+    circuitBreaker, healthProbe, bg1Sync, themeParksWiki, historicalAnalytics,
+};
 
 console.log("🚀 Agent Queue Initialized");
 
@@ -170,6 +204,86 @@ const scoutWorker = new Worker(
                 break;
             }
 
+            // ── Disney API Integration Jobs ──────────────────────────
+
+            case 'disney-health-probe': {
+                console.log('[HealthProbe] Running scheduled Disney health check...');
+                const healthResult = await healthProbe.runHealthCheck();
+                console.log(`[HealthProbe] Status: ${healthResult.status} (${healthResult.probes.length} probes, ${healthResult.trippedCircuits} tripped circuits)`);
+                break;
+            }
+
+            case 'bg1-sync': {
+                if (!env.BG1_SYNC_ENABLED) {
+                    console.log('[BG1Sync] Sync disabled via env var');
+                    break;
+                }
+                console.log('[BG1Sync] Running scheduled BG1 sync...');
+                const syncResult = await bg1Sync.sync();
+                console.log(`[BG1Sync] Processed ${syncResult.commitsProcessed} commits: ${syncResult.autoPatched} patched, ${syncResult.manualReview} review needed`);
+                break;
+            }
+
+            case 'skipper-session-refresh': {
+                console.log('[SessionRefresh] Checking for expiring Skipper sessions...');
+                const expiring = await disneyAuthClient.getSkippersNeedingRefresh(60);
+                for (const skipperId of expiring) {
+                    try {
+                        await disneyAuthClient.refreshSession(skipperId);
+                        console.log(`[SessionRefresh] ✅ Refreshed session for ${skipperId}`);
+                    } catch (err) {
+                        console.error(`[SessionRefresh] ❌ Failed to refresh ${skipperId}:`, err);
+                    }
+                }
+                break;
+            }
+
+            case 'refresh-analytics-views': {
+                console.log('[Analytics] Refreshing materialized views...');
+                await historicalAnalytics.refreshViews();
+                break;
+            }
+
+            case 'poll-themeparks-wiki': {
+                const { parkSlug } = job.data;
+
+                // Park Hours Guard: only record LL data during operating hours (6 AM – 1 AM ET)
+                const etNowWiki = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+                const etHourWiki = etNowWiki.getHours();
+                const parkOpen = etHourWiki >= 6 || etHourWiki < 1;
+
+                if (!parkOpen) {
+                    console.log(`[ThemeParksWiki] ⏸️  Skipping ${parkSlug} — outside park hours (${etHourWiki}:00 ET)`);
+                    break;
+                }
+
+                console.log(`[ThemeParksWiki] Polling live data for ${parkSlug}...`);
+                const liveData = await themeParksWiki.getLiveData(parkSlug);
+
+                // Record LL availability history
+                const llRecords = liveData
+                    .filter(e => e.queue?.RETURN_TIME || e.queue?.PAID_RETURN_TIME)
+                    .map(e => ({
+                        parkId: parkSlug,
+                        attractionId: e.id,
+                        attractionName: e.name,
+                        llType: e.queue?.RETURN_TIME ? 'FLEX' as const : 'INDIVIDUAL' as const,
+                        isAvailable: e.queue?.RETURN_TIME?.state === 'AVAILABLE' || e.queue?.PAID_RETURN_TIME?.state === 'AVAILABLE',
+                        nextReturnTime: e.queue?.RETURN_TIME?.returnStart ?? e.queue?.PAID_RETURN_TIME?.returnStart ?? undefined,
+                        displayPrice: e.queue?.PAID_RETURN_TIME?.price?.formatted ?? undefined,
+                    }));
+                await historicalAnalytics.recordLLAvailability(llRecords);
+                console.log(`[ThemeParksWiki] ${liveData.length} entities, ${llRecords.length} LL records saved`);
+                break;
+            }
+
+            case 'cleanup-historical-data': {
+                console.log('[Analytics] Running smart downsampling...');
+                const downsampled = await historicalAnalytics.downsampleAndCleanup();
+                console.log(`[Analytics] Downsampling complete: ${downsampled.deleted} records pruned`);
+                break;
+            }
+
             default:
                 console.log(`[Unknown] Task ${job.name} not configured.`);
         }
@@ -208,7 +322,58 @@ scoutWorker.on("failed", (job, err) => {
             jobId: 'infra-guardrail'
         });
         console.log('🛡️  Infrastructure Guardrail cron registered (5:00 AM EST)');
+
+        // ── Disney API Integration Crons ─────────────────────────────
+
+        // Disney Health Probe — every 5 minutes
+        await agentQueue.add('disney-health-probe', {}, {
+            repeat: { every: 5 * 60 * 1000 },
+            jobId: 'disney-health-probe'
+        });
+        console.log('🏥 Disney Health Probe registered (every 5 min)');
+
+        // BG1 Sync Engine — every 15 minutes
+        await agentQueue.add('bg1-sync', {}, {
+            repeat: { every: env.BG1_SYNC_INTERVAL_MIN * 60 * 1000 },
+            jobId: 'bg1-sync'
+        });
+        console.log('🔄 BG1 Sync Engine registered (every ' + env.BG1_SYNC_INTERVAL_MIN + ' min)');
+
+        // Skipper Session Refresh — every 30 minutes
+        await agentQueue.add('skipper-session-refresh', {}, {
+            repeat: { every: 30 * 60 * 1000 },
+            jobId: 'skipper-session-refresh'
+        });
+        console.log('🔑 Skipper Session Refresh registered (every 30 min)');
+
+        // ThemeParks.wiki Polling — every 5 min for each WDW park
+        for (const parkSlug of ['MK', 'EP', 'HS', 'AK']) {
+            await agentQueue.add('poll-themeparks-wiki', { parkSlug }, {
+                repeat: { every: 5 * 60 * 1000 },
+                jobId: `poll-themeparks-wiki-${parkSlug}`
+            });
+        }
+        console.log('🏰 ThemeParks.wiki polling registered (every 5 min, 4 parks)');
+
+        // Historical Analytics View Refresh — every 6 hours
+        await agentQueue.add('refresh-analytics-views', {}, {
+            repeat: { pattern: '0 */6 * * *', tz: 'America/New_York' },
+            jobId: 'refresh-analytics-views'
+        });
+        console.log('📊 Analytics View Refresh registered (every 6 hours)');
+
+        // Historical Data Cleanup — weekly on Sundays at 2 AM
+        await agentQueue.add('cleanup-historical-data', {}, {
+            repeat: { pattern: '0 2 * * 0', tz: 'America/New_York' },
+            jobId: 'cleanup-historical-data'
+        });
+        console.log('🧹 Historical Data Cleanup registered (weekly Sunday 2 AM)');
+
+        // Seed endpoint registry on startup
+        await endpointRegistry.seedIfEmpty();
+        console.log('📍 Endpoint Registry seeded');
+
     } catch (err) {
-        console.warn('⚠️  Failed to register nightly cron jobs:', err);
+        console.warn('⚠️  Failed to register cron jobs:', err);
     }
 })();

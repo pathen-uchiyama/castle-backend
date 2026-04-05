@@ -1,6 +1,8 @@
 import { ParkStatusRegistry } from '../services/ParkStatusRegistry';
 import { KnowledgeLayer } from '../services/KnowledgeLayer';
 import { AttractionStatus, ParkID } from '../models/types';
+import { HistoricalAnalytics } from '../services/disney/HistoricalAnalytics';
+import { WaitTimeSnapshot } from '../services/disney/types';
 
 /**
  * ScraperPipeline — Multi-source ingestion service for live park data.
@@ -91,6 +93,38 @@ export class ScraperPipeline {
                     await this.parkRegistry.updateAttractionStatus(status);
                     updatedCount++;
                 }
+            }
+
+            // ── Record to Historical Analytics (DIY Thrill Data) ──────────
+            // Park Hours Guard: only record during WDW operating window (6 AM – 1 AM ET)
+            // Cuts storage ~50% by skipping dead hours when everything is closed/zero.
+            const etNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+            const etHour = etNow.getHours();
+            const isDuringParkHours = etHour >= 6 || etHour < 1; // 6:00 AM – 12:59 AM
+
+            if (isDuringParkHours) {
+                const snapshots: WaitTimeSnapshot[] = [];
+                for (const land of data.lands) {
+                    for (const ride of land.rides) {
+                        snapshots.push({
+                            parkId,
+                            attractionId: `${parkId}_${ride.id}`,
+                            waitMinutes: ride.is_open ? ride.wait_time : null,
+                            isOpen: ride.is_open,
+                            recordedAt: new Date().toISOString(),
+                        });
+                    }
+                }
+
+                try {
+                    const analytics = new HistoricalAnalytics();
+                    const recorded = await analytics.recordWaitTimes(snapshots);
+                    console.log(`[Scraper] 📊 Recorded ${recorded} wait time snapshots to history`);
+                } catch (histErr) {
+                    console.warn('[Scraper] Historical recording failed (non-fatal):', histErr);
+                }
+            } else {
+                console.log(`[Scraper] ⏸️  Skipping history recording — outside park hours (${etHour}:00 ET)`);
             }
 
             console.log(`[Scraper] Updated ${updatedCount} attractions for ${parkId}`);

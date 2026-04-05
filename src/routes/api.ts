@@ -3,6 +3,9 @@ import { AgentController } from '../controllers/AgentController';
 import { PaymentController } from '../controllers/PaymentController';
 import { ParkController } from '../controllers/ParkController';
 import { TelemetryController } from '../controllers/TelemetryController';
+import {
+    healthProbe, bg1Sync, circuitBreaker, historicalAnalytics,
+} from '../workers/QueueManager';
 
 const router = Router();
 
@@ -44,5 +47,93 @@ router.post('/admin/provision-domain', AgentController.provisionDomain); // Prov
 // Monetization & Billing
 router.post('/payment/checkout', PaymentController.createCheckout);
 router.post('/payment/portal', PaymentController.createPortal);
+
+// ── Disney API Integration: Admin Endpoints ──────────────────────────
+
+// Health Dashboard — aggregated Disney API + ThemeParks.wiki health
+router.get('/admin/disney-health', async (_req, res) => {
+    try {
+        const result = await healthProbe.runHealthCheck();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: 'Health check failed', details: String(err) });
+    }
+});
+
+// BG1 Sync Status — last sync, pending reviews, recent activity
+router.get('/admin/bg1-sync-status', async (_req, res) => {
+    try {
+        const status = await bg1Sync.getStatus();
+        res.json(status);
+    } catch (err) {
+        res.status(500).json({ error: 'Sync status failed', details: String(err) });
+    }
+});
+
+// Circuit Breaker Status — all endpoint health states
+router.get('/admin/circuit-health', async (_req, res) => {
+    try {
+        const circuits = await circuitBreaker.getAllHealth();
+        res.json({ circuits, hasTripped: circuits.some(c => c.state !== 'CLOSED') });
+    } catch (err) {
+        res.status(500).json({ error: 'Circuit health failed', details: String(err) });
+    }
+});
+
+// Manual Circuit Reset
+router.post('/admin/circuit-reset/:endpoint', async (req, res) => {
+    try {
+        await circuitBreaker.resetCircuit(req.params.endpoint);
+        res.json({ success: true, endpoint: req.params.endpoint, state: 'CLOSED' });
+    } catch (err) {
+        res.status(500).json({ error: 'Circuit reset failed', details: String(err) });
+    }
+});
+
+// Crowd Level — real-time crowd level vs historical average for a park
+router.get('/admin/crowd-level/:parkId', async (req, res) => {
+    try {
+        const crowdLevel = await historicalAnalytics.getCrowdLevel(req.params.parkId);
+        res.json(crowdLevel);
+    } catch (err) {
+        res.status(500).json({ error: 'Crowd level failed', details: String(err) });
+    }
+});
+
+// LL Sell-Out Predictions — when does each ride's LL typically sell out?
+router.get('/admin/sellout-predictions', async (_req, res) => {
+    try {
+        const predictions = await historicalAnalytics.getSellOutPredictions();
+        res.json({ predictions });
+    } catch (err) {
+        res.status(500).json({ error: 'Sell-out predictions failed', details: String(err) });
+    }
+});
+
+router.get('/admin/sellout-predictions/:parkId', async (req, res) => {
+    try {
+        const predictions = await historicalAnalytics.getSellOutPredictions(req.params.parkId);
+        res.json({ predictions });
+    } catch (err) {
+        res.status(500).json({ error: 'Sell-out predictions failed', details: String(err) });
+    }
+});
+
+// Live LL Availability — latest snapshot from ll_availability_history
+router.get('/admin/ll-availability', async (_req, res) => {
+    try {
+        const { getSupabaseClient } = await import('../config/supabase');
+        const db = getSupabaseClient();
+        const { data, error } = await db
+            .from('ll_availability_history')
+            .select('attraction_name, park_id, ll_type, is_available, next_return_time, display_price, recorded_at')
+            .order('recorded_at', { ascending: false })
+            .limit(50);
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: 'LL availability failed', details: String(err) });
+    }
+});
 
 export default router;

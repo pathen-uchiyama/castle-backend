@@ -20,6 +20,22 @@ export const env = {
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'patchenu@gmail.com',
   ADMIN_PHONE: process.env.ADMIN_PHONE || '+15551234567',
+
+  // ── Disney API Integration ──────────────────────────────────
+  DISNEY_WDW_ORIGIN: process.env.DISNEY_WDW_ORIGIN || 'https://disneyworld.disney.go.com',
+  DISNEY_DLR_ORIGIN: process.env.DISNEY_DLR_ORIGIN || 'https://disneyland.disney.go.com',
+  DISNEY_VQ_WDW_ORIGIN: process.env.DISNEY_VQ_WDW_ORIGIN || 'https://vqguest-svc-wdw.wdprapps.disney.com',
+  DISNEY_VQ_DLR_ORIGIN: process.env.DISNEY_VQ_DLR_ORIGIN || 'https://vqguest-svc.wdprapps.disney.com',
+  DISNEY_API_JITTER_MIN_MS: parseInt(process.env.DISNEY_API_JITTER_MIN_MS || '200', 10),
+  DISNEY_API_JITTER_MAX_MS: parseInt(process.env.DISNEY_API_JITTER_MAX_MS || '1500', 10),
+  DISNEY_API_MAX_RPS_PER_SKIPPER: parseInt(process.env.DISNEY_API_MAX_RPS_PER_SKIPPER || '2', 10),
+
+  // ── BG1 Sync Engine ─────────────────────────────────────────
+  BG1_SYNC_ENABLED: process.env.BG1_SYNC_ENABLED !== 'false',
+  BG1_SYNC_INTERVAL_MIN: parseInt(process.env.BG1_SYNC_INTERVAL_MIN || '15', 10),
+
+  // ── Alerting ────────────────────────────────────────────────
+  ALERT_WEBHOOK_URL: process.env.ALERT_WEBHOOK_URL, // n8n webhook for critical alerts
 };
 
 // Validation
