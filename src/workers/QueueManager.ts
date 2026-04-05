@@ -28,7 +28,7 @@ import {
 } from '../services/disney';
 
 // Catch uncaught ioredis errors so the process doesn't crash
-process.on('uncaughtException', (err) => {
+process.on('uncaughtException', (err: any) => {
     if (err.message?.includes('ECONNREFUSED') || err.code === 'ECONNREFUSED') {
         console.warn('⚠️ Redis connection refused (non-fatal) — queues offline');
     } else {
