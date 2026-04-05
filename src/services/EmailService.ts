@@ -8,7 +8,17 @@ import { env } from '../config/env';
  * Uses Resend with verified domain castlecompanion.com.
  */
 export class EmailService {
-  private static resend = new Resend(env.RESEND_API_KEY);
+  private static _resend: Resend | null = null;
+  
+  private static get resend(): Resend {
+    if (!this._resend) {
+      if (!env.RESEND_API_KEY) {
+        console.warn('⚠️ RESEND_API_KEY not set — emails will fail');
+      }
+      this._resend = new Resend(env.RESEND_API_KEY || 'not-configured');
+    }
+    return this._resend;
+  }
 
   /**
    * Sends a transactional email.
