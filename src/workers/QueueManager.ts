@@ -27,8 +27,27 @@ import {
     HistoricalAnalytics,
 } from '../services/disney';
 
-const connection = new Redis(env.REDIS_URL, {
+// Debug: log which Redis URL is being used
+const redisUrl = env.REDIS_URL;
+console.log(`🔌 Redis connecting to: ${redisUrl.replace(/\/\/.*@/, '//***@')}`);
+
+const connection = new Redis(redisUrl, {
     maxRetriesPerRequest: null,
+    retryStrategy: (times: number) => {
+        if (times > 3) {
+            console.warn('⚠️ Redis connection failed after 3 retries — queues disabled');
+            return null; // stop retrying
+        }
+        return Math.min(times * 500, 2000);
+    },
+});
+
+connection.on('error', (err) => {
+    console.warn('⚠️ Redis error (non-fatal):', err.message);
+});
+
+connection.on('connect', () => {
+    console.log('✅ Redis connected successfully');
 });
 
 export const agentQueue = new Queue("agent-tasks", { connection: connection as any });
