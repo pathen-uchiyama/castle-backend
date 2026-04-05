@@ -27,19 +27,31 @@ import {
     HistoricalAnalytics,
 } from '../services/disney';
 
+// Catch uncaught ioredis errors so the process doesn't crash
+process.on('uncaughtException', (err) => {
+    if (err.message?.includes('ECONNREFUSED') || err.code === 'ECONNREFUSED') {
+        console.warn('⚠️ Redis connection refused (non-fatal) — queues offline');
+    } else {
+        console.error('💀 Uncaught exception:', err);
+        // Only exit for NON-Redis errors
+        process.exit(1);
+    }
+});
+
 // Debug: log which Redis URL is being used
-const redisUrl = env.REDIS_URL;
-console.log(`🔌 Redis connecting to: ${redisUrl.replace(/\/\/.*@/, '//***@')}`);
+const redisUrl = process.env.REDIS_URL || env.REDIS_URL;
+console.log(`🔍 process.env.REDIS_URL = ${process.env.REDIS_URL ? 'SET (' + process.env.REDIS_URL.replace(/\/\/.*@/, '//***@') + ')' : 'UNDEFINED (using fallback: ' + env.REDIS_URL.replace(/\/\/.*@/, '//***@') + ')'}`);
 
 const connection = new Redis(redisUrl, {
     maxRetriesPerRequest: null,
     retryStrategy: (times: number) => {
-        if (times > 3) {
-            console.warn('⚠️ Redis connection failed after 3 retries — queues disabled');
-            return null; // stop retrying
+        if (times > 5) {
+            console.warn('⚠️ Redis connection failed after 5 retries — queues disabled');
+            return null;
         }
-        return Math.min(times * 500, 2000);
+        return Math.min(times * 1000, 3000);
     },
+    lazyConnect: true,
 });
 
 connection.on('error', (err) => {
@@ -48,6 +60,11 @@ connection.on('error', (err) => {
 
 connection.on('connect', () => {
     console.log('✅ Redis connected successfully');
+});
+
+// Attempt connection but don't block startup
+connection.connect().catch((err) => {
+    console.warn('⚠️ Redis initial connection failed:', err.message);
 });
 
 export const agentQueue = new Queue("agent-tasks", { connection: connection as any });
