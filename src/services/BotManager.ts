@@ -1,7 +1,4 @@
-import { env } from "../config/env";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(env.SUPABASE_URL || "", env.SUPABASE_SERVICE_KEY || "");
+import { getSupabaseClient } from "../config/supabase";
 
 export interface BotInstance {
     id: string;

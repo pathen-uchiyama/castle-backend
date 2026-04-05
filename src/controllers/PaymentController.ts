@@ -1,6 +1,6 @@
 import express from 'express';
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../config/supabase';
 import { env } from '../config/env';
 import { PaymentService } from '../services/PaymentService';
 
@@ -9,7 +9,7 @@ const stripe = new Stripe(env.STRIPE_SECRET_KEY || 'sk_test_123', {
     typescript: true
 });
 
-const supabase = createClient(env.SUPABASE_URL || '', env.SUPABASE_SERVICE_KEY || '');
+const supabase = getSupabaseClient();
 
 export class PaymentController {
     /**
