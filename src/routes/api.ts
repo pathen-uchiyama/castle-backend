@@ -692,4 +692,164 @@ router.post('/snipe/submit', async (req, res) => {
     }
 });
 
+// ── Day Recalibration: Advisory-Aware Scheduling ────────────────
+
+router.post('/trips/:tripId/recalibrate', async (req, res) => {
+    try {
+        const { tripId } = req.params;
+        const { parkId, guests, scoredRides, existingItinerary } = req.body;
+
+        if (!parkId) {
+            return res.status(400).json({ error: 'parkId is required' });
+        }
+
+        // Load advisory data
+        const supabase = getSupabaseClient();
+        let advisories: any[] = [];
+
+        const { data: advisoryData } = await supabase
+            .from('ride_advisories')
+            .select('*')
+            .eq('park_id', parkId);
+
+        if (advisoryData && advisoryData.length > 0) {
+            advisories = advisoryData;
+        } else {
+            // Fallback to TypeScript data
+            const { ALL_WDW_ADVISORIES } = await import('../data/RideAdvisories');
+            advisories = ALL_WDW_ADVISORIES.filter((a: { parkId: string }) => a.parkId === parkId);
+        }
+
+        // Run recalibration engine
+        const { DayRecalibrationEngine } = await import('../services/DayRecalibrationEngine');
+        const result = DayRecalibrationEngine.calibrate({
+            tripId,
+            parkId: parkId as any,
+            guests: guests || [],
+            advisories,
+            scoredRides: scoredRides || [],
+            existingItinerary: existingItinerary || [],
+            activeSnipeCount: 0,
+            totalActiveUsers: 1,
+        });
+
+        res.json({
+            tripId,
+            parkId,
+            eligibleRides: result.eligibleRides.length,
+            filteredRides: result.filteredRides,
+            flashMobWarnings: result.flashMobWarnings,
+            diversifiedSlots: result.diversifiedSlots,
+            enrichedSteps: result.enrichedSteps.length,
+            advisoryCount: advisories.length,
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Recalibration failed', details: String(err) });
+    }
+});
+
+// ── Whisper Gallery: Content Moderation ──────────────────────────
+
+// Submit content for moderation (4-layer pipeline)
+router.post('/whisper/moderate', async (req, res) => {
+    try {
+        const { contentId, userId, text, contentType, accountAgeDays, priorFlags } = req.body;
+
+        if (!text || !userId) {
+            return res.status(400).json({ error: 'text and userId are required' });
+        }
+
+        const { WhisperGalleryModeration } = await import('../services/WhisperGalleryModeration');
+        const moderator = new WhisperGalleryModeration();
+
+        const result = await moderator.moderate({
+            contentId: contentId || `wg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            userId,
+            text,
+            contentType: contentType || 'tip',
+            accountAgeDays,
+            priorFlags,
+        });
+
+        // Return appropriate HTTP status based on action
+        const status = result.action === 'rejected' ? 403
+            : result.action === 'queued_for_review' ? 202
+            : 200;
+
+        res.status(status).json(result);
+    } catch (err) {
+        res.status(500).json({ error: 'Moderation failed', details: String(err) });
+    }
+});
+
+// Get human review queue (for UnifiedInbox)
+router.get('/admin/whisper/review-queue', async (_req, res) => {
+    try {
+        const { WhisperGalleryModeration } = await import('../services/WhisperGalleryModeration');
+        const moderator = new WhisperGalleryModeration();
+        const queue = await moderator.getReviewQueue(50);
+        res.json({ queue, count: queue.length });
+    } catch (err) {
+        res.json({ queue: [], count: 0 });
+    }
+});
+
+// Human moderator decision
+router.post('/admin/whisper/decision', async (req, res) => {
+    try {
+        const { contentId, adminId, decision, notes } = req.body;
+
+        if (!contentId || !adminId || !decision) {
+            return res.status(400).json({ error: 'contentId, adminId, and decision are required' });
+        }
+
+        if (!['approve', 'reject'].includes(decision)) {
+            return res.status(400).json({ error: 'decision must be "approve" or "reject"' });
+        }
+
+        const { WhisperGalleryModeration } = await import('../services/WhisperGalleryModeration');
+        const moderator = new WhisperGalleryModeration();
+        const auditEntry = await moderator.humanDecision(contentId, adminId, decision, notes);
+
+        res.json({ success: true, auditEntry });
+    } catch (err) {
+        res.status(500).json({ error: 'Decision failed', details: String(err) });
+    }
+});
+
+// AB 316 Audit log
+router.get('/admin/whisper/audit-log', async (req, res) => {
+    try {
+        const date = (req.query.date as string) || new Date().toISOString().substring(0, 10);
+        const limit = parseInt(req.query.limit as string) || 100;
+
+        const { WhisperGalleryModeration } = await import('../services/WhisperGalleryModeration');
+        const moderator = new WhisperGalleryModeration();
+        const entries = await moderator.getAuditLog(date, limit);
+
+        res.json({ date, entries, count: entries.length });
+    } catch (err) {
+        res.json({ date: '', entries: [], count: 0 });
+    }
+});
+
+// Moderation stats (dashboard panel)
+router.get('/admin/whisper/stats', async (req, res) => {
+    try {
+        const date = req.query.date as string | undefined;
+
+        const { WhisperGalleryModeration } = await import('../services/WhisperGalleryModeration');
+        const moderator = new WhisperGalleryModeration();
+        const stats = await moderator.getStats(date);
+
+        res.json(stats);
+    } catch (err) {
+        res.json({
+            total: 0, safe: 0, rejected: 0, rumor: 0,
+            needsReview: 0, pendingReview: 0, avgLatencyMs: 0,
+            byLayer: { L1: 0, L2: 0, L3: 0, L4: 0 },
+        });
+    }
+});
+
 export default router;
