@@ -1,6 +1,92 @@
 import { RideAdvisory } from '../data/RideAdvisoryTypes';
 import { ScoredRide, getMinSpacingMinutes } from '../data/RepeatVoteScoring';
 import { ParkID, Guest, ItineraryStep } from '../models/types';
+import Redis from 'ioredis';
+import { env } from '../config/env';
+
+// ── Debounce Manager ────────────────────────────────────────────
+
+/**
+ * RecalibrationDebounce — Collapse multiple triggers within 30s
+ *
+ * When a major ride closes, it can trigger recalibration for hundreds
+ * of users simultaneously. This debounce ensures only ONE recalibration
+ * job runs per trip per 30-second window.
+ *
+ * Pattern: Redis SETNX with 30s TTL
+ *   - First trigger: sets key, runs calibration
+ *   - Subsequent triggers within 30s: return cached result
+ */
+export class RecalibrationDebounce {
+    private redis: Redis | null = null;
+    private static readonly DEBOUNCE_PREFIX = 'recal:debounce:';
+    private static readonly RESULT_PREFIX = 'recal:result:';
+    private static readonly DEBOUNCE_TTL = 30; // seconds
+
+    constructor(redisUrl?: string) {
+        try {
+            this.redis = new Redis(redisUrl || env.REDIS_URL, {
+                maxRetriesPerRequest: null,
+                lazyConnect: true,
+            });
+            this.redis.on('error', () => { /* non-fatal */ });
+            this.redis.connect().catch(() => { /* non-fatal */ });
+        } catch {
+            this.redis = null;
+        }
+    }
+
+    /**
+     * Check if a recalibration is already in progress or recently completed.
+     * Returns the cached result if debounced, or null if this is the first trigger.
+     */
+    async checkDebounce(tripId: string, triggerReason: string): Promise<{
+        debounced: boolean;
+        cachedResult: any | null;
+        triggerId: string;
+    }> {
+        if (!this.redis) {
+            return { debounced: false, cachedResult: null, triggerId: `local_${Date.now()}` };
+        }
+
+        const debounceKey = `${RecalibrationDebounce.DEBOUNCE_PREFIX}${tripId}`;
+        const triggerId = `recal_${tripId}_${Date.now()}`;
+
+        // Try to acquire the debounce lock
+        const acquired = await this.redis.set(
+            debounceKey,
+            JSON.stringify({ triggerId, reason: triggerReason, timestamp: new Date().toISOString() }),
+            'EX', RecalibrationDebounce.DEBOUNCE_TTL,
+            'NX'
+        );
+
+        if (acquired) {
+            // We got the lock — this is the first trigger
+            return { debounced: false, cachedResult: null, triggerId };
+        }
+
+        // Lock exists — check for cached result
+        const resultKey = `${RecalibrationDebounce.RESULT_PREFIX}${tripId}`;
+        const cached = await this.redis.get(resultKey);
+
+        if (cached) {
+            return { debounced: true, cachedResult: JSON.parse(cached), triggerId };
+        }
+
+        // Result not yet available (still processing) — return debounced with no result
+        return { debounced: true, cachedResult: null, triggerId };
+    }
+
+    /**
+     * Cache the calibration result for subsequent debounced requests.
+     */
+    async cacheResult(tripId: string, result: any): Promise<void> {
+        if (!this.redis) return;
+
+        const resultKey = `${RecalibrationDebounce.RESULT_PREFIX}${tripId}`;
+        await this.redis.set(resultKey, JSON.stringify(result), 'EX', RecalibrationDebounce.DEBOUNCE_TTL);
+    }
+}
 
 /**
  * DayRecalibrationEngine — Flash Mob Prevention + Advisory-Aware Scheduling

@@ -71,14 +71,14 @@ run_test() {
 if [[ -n "${SINGLE_TEST}" ]]; then
     run_test "${SCRIPT_DIR}/${SINGLE_TEST}*.js"
 else
-    echo "📋 Test 1/5: Baseline Health"
+    echo "📋 Test 1/7: Baseline Health"
     if $QUICK_MODE; then
         run_test "${SCRIPT_DIR}/01_baseline_health.js" "--vus 50 --duration 30s"
     else
         run_test "${SCRIPT_DIR}/01_baseline_health.js"
     fi
 
-    echo "📋 Test 2/5: Auth + DB Read"
+    echo "📋 Test 2/7: Auth + DB Read"
     if $QUICK_MODE; then
         run_test "${SCRIPT_DIR}/02_auth_db_read.js" "--vus 25 --duration 30s"
     else
@@ -87,25 +87,31 @@ else
 
     # Check if Mock Disney API is running for tests 3-5
     if curl -sf "${MOCK_DISNEY_URL}/health" > /dev/null 2>&1; then
-        echo "📋 Test 3/5: 7AM LL Rush"
+        echo "📋 Test 3/7: 7AM LL Rush"
         run_test "${SCRIPT_DIR}/03_ll_rush.js"
 
-        echo "📋 Test 4/5: Soak Test (SKIPPED in quick mode)"
+        echo "📋 Test 4/7: Soak Test (SKIPPED in quick mode)"
         if ! $QUICK_MODE; then
             echo "⚠️  Soak test runs for 8 hours. Run manually:"
             echo "   k6 run load-tests/04_soak_test.js"
         fi
 
-        echo "📋 Test 5/5: Failure & Recovery"
+        echo "📋 Test 5/7: Failure & Recovery"
         run_test "${SCRIPT_DIR}/05_failure_recovery.js"
     else
         echo "⚠️  Mock Disney API not running — skipping tests 3-5"
         echo "   Start it: cd mock-disney-api && npm run dev"
     fi
+
+    echo "📋 Test 6/7: Offline Conflict Resolution"
+    run_test "${SCRIPT_DIR}/06_offline_conflict.js"
+
+    echo "📋 Test 7/7: Mass Recalibration + Flash Mob Prevention"
+    run_test "${SCRIPT_DIR}/07_mass_recalibration.js"
 fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Load test suite complete"
+echo "✅ Load test suite complete (7 tests)"
 echo "   Results saved to: ${RESULTS_DIR}/"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

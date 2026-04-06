@@ -697,10 +697,32 @@ router.post('/snipe/submit', async (req, res) => {
 router.post('/trips/:tripId/recalibrate', async (req, res) => {
     try {
         const { tripId } = req.params;
-        const { parkId, guests, scoredRides, existingItinerary } = req.body;
+        const { parkId, guests, scoredRides, existingItinerary, triggerReason } = req.body;
 
         if (!parkId) {
             return res.status(400).json({ error: 'parkId is required' });
+        }
+
+        // Debounce check — collapse multiple triggers within 30s
+        const { RecalibrationDebounce } = await import('../services/DayRecalibrationEngine');
+        const debouncer = new RecalibrationDebounce();
+        const debounceCheck = await debouncer.checkDebounce(tripId, triggerReason || 'manual');
+
+        if (debounceCheck.debounced && debounceCheck.cachedResult) {
+            return res.json({
+                ...debounceCheck.cachedResult,
+                _debounced: true,
+                _triggerId: debounceCheck.triggerId,
+            });
+        }
+
+        if (debounceCheck.debounced) {
+            // Still processing from a previous trigger — return 202 Accepted
+            return res.status(202).json({
+                message: 'Recalibration already in progress for this trip',
+                triggerId: debounceCheck.triggerId,
+                retryAfterMs: 5000,
+            });
         }
 
         // Load advisory data
@@ -733,7 +755,7 @@ router.post('/trips/:tripId/recalibrate', async (req, res) => {
             totalActiveUsers: 1,
         });
 
-        res.json({
+        const response = {
             tripId,
             parkId,
             eligibleRides: result.eligibleRides.length,
@@ -742,7 +764,13 @@ router.post('/trips/:tripId/recalibrate', async (req, res) => {
             diversifiedSlots: result.diversifiedSlots,
             enrichedSteps: result.enrichedSteps.length,
             advisoryCount: advisories.length,
-        });
+            _triggerId: debounceCheck.triggerId,
+        };
+
+        // Cache the result for debounce
+        await debouncer.cacheResult(tripId, response);
+
+        res.json(response);
     } catch (err) {
         res.status(500).json({ error: 'Recalibration failed', details: String(err) });
     }
