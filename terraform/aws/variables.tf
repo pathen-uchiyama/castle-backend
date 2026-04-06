@@ -26,3 +26,43 @@ variable "environment" {
   type        = string
   default     = "prod"
 }
+
+# ── Auto Scaling Group ──────────────────────────────────────────
+
+variable "asg_min_size" {
+  description = "Minimum number of EC2 instances"
+  type        = number
+  default     = 1
+}
+
+variable "asg_max_size" {
+  description = "Maximum number of EC2 instances"
+  type        = number
+  default     = 4
+}
+
+variable "asg_desired_capacity" {
+  description = "Desired number of EC2 instances"
+  type        = number
+  default     = 1
+}
+
+variable "subnet_ids" {
+  description = "VPC subnet IDs for the ASG"
+  type        = list(string)
+  default     = [] # Will use default VPC subnets
+}
+
+# ── Monitoring ──────────────────────────────────────────────────
+
+variable "sns_topic_arn" {
+  description = "SNS topic ARN for CloudWatch alarm notifications"
+  type        = string
+  default     = "" # Set after creating SNS topic
+}
+
+variable "admin_email" {
+  description = "Admin email for CloudWatch alarm notifications"
+  type        = string
+  default     = "patchenu@gmail.com"
+}
