@@ -1192,4 +1192,8 @@ router.post('/trips/:tripId/merge-party', async (req, res) => {
     }
 });
 
+// ── CloudWatch Metrics Proxy ────────────────────────────────────
+import metricsProxy from './metricsProxy';
+router.use(metricsProxy);
+
 export default router;
