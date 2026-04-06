@@ -1,11 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import { env } from './config/env';
+import { metricsMiddleware } from './services/MetricsEmitter';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(metricsMiddleware); // CloudWatch latency + error tracking
 
 // Health check — always available, no dependencies
 app.get('/health', (_req, res) => {

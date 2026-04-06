@@ -880,6 +880,57 @@ router.get('/admin/whisper/stats', async (req, res) => {
     }
 });
 
+// ── Supabase Realtime Channels ──────────────────────────────────
+
+// Test broadcast (admin/debug only)
+router.post('/admin/realtime/test', async (req, res) => {
+    try {
+        const { channel, event, payload } = req.body;
+
+        if (!channel || !event) {
+            return res.status(400).json({ error: 'channel and event are required' });
+        }
+
+        const { realtime } = await import('../services/RealtimeChannels');
+        await realtime.pushQueueUpdate(channel, {
+            jobId: 'test',
+            status: 'confirmed',
+            rideId: 'TEST_RIDE',
+            rideName: 'Test Broadcast',
+            message: payload?.message || 'Realtime channel test',
+            timestamp: new Date().toISOString(),
+        });
+
+        res.json({ sent: true, channel, event });
+    } catch (err) {
+        res.status(500).json({ error: 'Broadcast failed', details: String(err) });
+    }
+});
+
+// Push advisory broadcast (used by ScraperPipeline when ride status changes)
+router.post('/admin/realtime/advisory', async (req, res) => {
+    try {
+        const { parkId, attractionId, attractionName, changeType, newStatus, message } = req.body;
+
+        if (!parkId || !attractionId || !changeType) {
+            return res.status(400).json({ error: 'parkId, attractionId, and changeType are required' });
+        }
+
+        const { realtime } = await import('../services/RealtimeChannels');
+        await realtime.pushAdvisoryBroadcast(parkId, {
+            attractionId,
+            attractionName: attractionName || attractionId,
+            changeType,
+            newStatus: newStatus || 'unknown',
+            message: message || `${attractionName || attractionId} status changed to ${newStatus}`,
+        });
+
+        res.json({ sent: true, parkId, attractionId, changeType });
+    } catch (err) {
+        res.status(500).json({ error: 'Advisory broadcast failed', details: String(err) });
+    }
+});
+
 // ── Offline State Reconciliation ────────────────────────────────
 
 // Reconnection handshake — sync state since last timestamp
