@@ -880,6 +880,77 @@ router.get('/admin/whisper/stats', async (req, res) => {
     }
 });
 
+// ── AWS Auto-Scaling Status ─────────────────────────────────────
+
+router.get('/admin/scaling', async (_req, res) => {
+    try {
+        const { AutoScaling } = require('@aws-sdk/client-auto-scaling') as any;
+        const { CloudWatch } = require('@aws-sdk/client-cloudwatch') as any;
+
+        const asg = new AutoScaling({ region: process.env.AWS_REGION || 'us-east-1' });
+        const cw = new CloudWatch({ region: process.env.AWS_REGION || 'us-east-1' });
+
+        // Get ASG status
+        const asgResult = await asg.describeAutoScalingGroups({
+            AutoScalingGroupNames: ['digital-plaid-asg-prod'],
+        });
+
+        const group = asgResult.AutoScalingGroups?.[0];
+        if (!group) {
+            return res.json({
+                mode: 'local',
+                instances: { running: 1, desired: 1, min: 1, max: 1 },
+                schedule: { nextAction: 'N/A (local mode)', currentWindow: 'development' },
+                alarms: [],
+            });
+        }
+
+        // Get alarm states
+        const alarmsResult = await cw.describeAlarms({
+            AlarmNamePrefix: 'digital-plaid-',
+        });
+
+        const alarms = (alarmsResult.MetricAlarms || []).map((a: any) => ({
+            name: a.AlarmName,
+            state: a.StateValue, // OK | ALARM | INSUFFICIENT_DATA
+            metric: a.MetricName,
+            threshold: a.Threshold,
+        }));
+
+        // Determine current window
+        const now = new Date();
+        const etHour = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' })).getHours();
+        const currentWindow = etHour >= 7 && etHour < 23 ? 'park_hours' : 'overnight';
+
+        res.json({
+            mode: 'aws',
+            instances: {
+                running: group.Instances?.length || 0,
+                desired: group.DesiredCapacity,
+                min: group.MinSize,
+                max: group.MaxSize,
+            },
+            schedule: {
+                nextAction: etHour < 7
+                    ? 'Scale UP at 6:45 AM ET'
+                    : etHour < 23
+                    ? 'Scale DOWN at 11:00 PM ET'
+                    : 'Scale UP at 6:45 AM ET (tomorrow)',
+                currentWindow,
+            },
+            alarms,
+        });
+    } catch {
+        // Not on AWS — return local mode response
+        res.json({
+            mode: 'local',
+            instances: { running: 1, desired: 1, min: 1, max: 1 },
+            schedule: { nextAction: 'N/A (local mode)', currentWindow: 'development' },
+            alarms: [],
+        });
+    }
+});
+
 // ── Supabase Realtime Channels ──────────────────────────────────
 
 // Test broadcast (admin/debug only)
