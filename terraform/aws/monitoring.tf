@@ -262,7 +262,7 @@ resource "aws_cloudwatch_metric_alarm" "error_rate_high" {
   period              = 300
   statistic           = "Sum"
   threshold           = 50 # ~1% at 1000 RPM over 5 min
-  alarm_description   = "5xx error rate exceeded 1% — investigate immediately"
+  alarm_description   = "5xx error rate exceeded 1% - investigate immediately"
   treat_missing_data  = "notBreaching"
 
   dimensions = {
@@ -304,7 +304,7 @@ resource "aws_cloudwatch_metric_alarm" "queue_depth_high" {
   period              = 300
   statistic           = "Maximum"
   threshold           = 1000
-  alarm_description   = "Priority queue depth exceeded 1000 — workers may be starved"
+  alarm_description   = "Priority queue depth exceeded 1000 - workers may be starved"
   treat_missing_data  = "notBreaching"
 
   dimensions = {
@@ -324,7 +324,7 @@ resource "aws_cloudwatch_metric_alarm" "dropped_sessions" {
   period              = 60
   statistic           = "Sum"
   threshold           = 0
-  alarm_description   = "🚨 DROPPED SESSION DETECTED — zero tolerance breach"
+  alarm_description   = "CRITICAL: DROPPED SESSION DETECTED - zero tolerance breach"
   treat_missing_data  = "notBreaching"
 
   alarm_actions = [var.sns_topic_arn]
@@ -340,7 +340,7 @@ resource "aws_cloudwatch_metric_alarm" "llm_spend_warning" {
   period              = 3600
   statistic           = "Maximum"
   threshold           = 400 # $400 of $500 daily ceiling
-  alarm_description   = "LLM daily spend at 80% of ceiling — circuit breaker imminent"
+  alarm_description   = "LLM daily spend at 80% of ceiling - circuit breaker imminent"
   treat_missing_data  = "notBreaching"
 
   dimensions = {
