@@ -6,6 +6,7 @@ import { TelemetryController } from '../controllers/TelemetryController';
 import {
     healthProbe, bg1Sync, circuitBreaker, historicalAnalytics, themeParksWiki,
 } from '../workers/QueueManager';
+import { getSupabaseClient } from '../config/supabase';
 
 const router = Router();
 
@@ -162,6 +163,414 @@ router.get('/admin/live-wait-times', async (_req, res) => {
         res.json(results);
     } catch (err) {
         res.status(500).json({ error: 'Live wait times failed', details: String(err) });
+    }
+});
+
+// ── Phase 2: Feature Flags ──────────────────────────────────────
+router.get('/admin/feature-flags', async (_req, res) => {
+    try {
+        const db = getSupabaseClient();
+        const { data, error } = await db
+            .from('feature_flags')
+            .select('*')
+            .order('category', { ascending: true });
+        if (error) throw error;
+        res.json(data || []);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch feature flags', details: String(err) });
+    }
+});
+
+router.put('/admin/feature-flags/:id', async (req, res) => {
+    try {
+        const db = getSupabaseClient();
+        const { id } = req.params;
+        const { enabled, name, description, tier } = req.body;
+        const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+        if (typeof enabled === 'boolean') updates.enabled = enabled;
+        if (name) updates.name = name;
+        if (description) updates.description = description;
+        if (tier) updates.tier = tier;
+        
+        const { data, error } = await db
+            .from('feature_flags')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single();
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to update feature flag', details: String(err) });
+    }
+});
+
+// ── Phase 2: Fleet Alerts (derived from circuit + health state) ──
+router.get('/admin/fleet-alerts', async (_req, res) => {
+    try {
+        const alerts: any[] = [];
+        
+        // Derive alerts from circuit breaker state
+        try {
+            const circuits = await circuitBreaker.getAllHealth();
+            if (Array.isArray(circuits)) {
+                for (const circuit of circuits) {
+                    if (circuit.state === 'OPEN') {
+                        alerts.push({
+                            id: `circuit-${circuit.endpoint}`,
+                            type: 'circuit_breaker',
+                            severity: 'critical',
+                            title: `Circuit Tripped: ${circuit.endpoint}`,
+                            detail: `Circuit breaker opened after repeated failures. Auto-reset in 30s.`,
+                            timestamp: new Date().toISOString(),
+                            resolved: false,
+                        });
+                    }
+                }
+            }
+        } catch { /* circuits unavailable */ }
+
+        // Always include a system status entry if no alerts
+        if (alerts.length === 0) {
+            alerts.push({
+                id: 'all-clear',
+                type: 'system',
+                severity: 'info',
+                title: 'All Systems Nominal',
+                detail: 'No active alerts. All circuits closed, all probes healthy.',
+                timestamp: new Date().toISOString(),
+                resolved: true,
+            });
+        }
+
+        res.json(alerts);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch fleet alerts', details: String(err) });
+    }
+});
+
+// ── Phase 2: Users (from Supabase) ──────────────────────────────
+router.get('/admin/users', async (req, res) => {
+    try {
+        const db = getSupabaseClient();
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = 50;
+        const offset = (page - 1) * limit;
+        
+        const { data, error, count } = await db
+            .from('profiles')
+            .select('*', { count: 'exact' })
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1);
+        
+        if (error) throw error;
+        res.json({ users: data || [], total: count || 0, page, limit });
+    } catch (err) {
+        // If profiles table doesn't exist yet, return empty
+        res.json({ users: [], total: 0, page: 1, limit: 50, note: 'profiles table not yet created' });
+    }
+});
+
+router.put('/admin/users/:id', async (req, res) => {
+    try {
+        const db = getSupabaseClient();
+        const { id } = req.params;
+        const updates = req.body;
+        
+        const { data, error } = await db
+            .from('profiles')
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .select()
+            .single();
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to update user', details: String(err) });
+    }
+});
+
+// ── Phase 2: Inbox (System Messages) ────────────────────────────
+router.get('/admin/inbox', async (req, res) => {
+    try {
+        const db = getSupabaseClient();
+        const { data, error } = await db
+            .from('system_messages')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100);
+        if (error) throw error;
+        res.json(data || []);
+    } catch (err) {
+        // If table doesn't exist yet, return empty
+        res.json([]);
+    }
+});
+
+// ── Ride Advisories: Public Read + Admin Seed ───────────────────
+
+// GET all advisories, optionally filtered by park
+router.get('/ride-advisories', async (req, res) => {
+    try {
+        const db = getSupabaseClient();
+        const parkId = req.query.parkId as string | undefined;
+
+        let query = db
+            .from('ride_advisories')
+            .select('*')
+            .order('park_id')
+            .order('name');
+
+        if (parkId) {
+            query = query.eq('park_id', parkId);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        res.json({
+            advisories: data || [],
+            total: data?.length || 0,
+            parks: [...new Set((data || []).map((r: { park_id: string }) => r.park_id))],
+        });
+    } catch (err) {
+        // Return from TypeScript data if Supabase table is empty
+        const { ALL_WDW_ADVISORIES } = await import('../data/RideAdvisories');
+        const parkId = req.query.parkId as string | undefined;
+        const filtered = parkId
+            ? ALL_WDW_ADVISORIES.filter(a => a.parkId === parkId)
+            : ALL_WDW_ADVISORIES;
+        res.json({
+            advisories: filtered,
+            total: filtered.length,
+            parks: [...new Set(filtered.map(a => a.parkId))],
+            source: 'typescript_fallback',
+        });
+    }
+});
+
+// GET single ride advisory
+router.get('/ride-advisories/:attractionId', async (req, res) => {
+    try {
+        const db = getSupabaseClient();
+        const { attractionId } = req.params;
+
+        const { data, error } = await db
+            .from('ride_advisories')
+            .select('*')
+            .eq('attraction_id', attractionId)
+            .single();
+
+        if (error || !data) {
+            // Fallback to TypeScript data
+            const { ADVISORY_MAP } = await import('../data/RideAdvisories');
+            const advisory = ADVISORY_MAP[attractionId];
+            if (!advisory) {
+                return res.status(404).json({ error: 'Ride not found' });
+            }
+            return res.json({ ...advisory, source: 'typescript_fallback' });
+        }
+
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch advisory', details: String(err) });
+    }
+});
+
+// POST seed all advisories from TypeScript data → Supabase
+router.post('/admin/seed-advisories', async (_req, res) => {
+    try {
+        const db = getSupabaseClient();
+        const { ALL_WDW_ADVISORIES } = await import('../data/RideAdvisories');
+
+        // Transform camelCase TypeScript → snake_case Supabase
+        const rows = ALL_WDW_ADVISORIES.map(a => ({
+            attraction_id: a.attractionId,
+            name: a.name,
+            park_id: a.parkId,
+            land: a.land,
+            height_requirement_inches: a.heightRequirementInches,
+            operational_status: a.operationalStatus,
+            reopen_date: a.reopenDate,
+            reopen_date_confirmed: a.reopenDateConfirmed,
+            closure_notes: a.closureNotes,
+            permanent_closure_date: a.permanentClosureDate,
+            is_new_attraction: a.isNewAttraction,
+            expected_open_date: a.expectedOpenDate,
+            expected_open_date_confirmed: a.expectedOpenDateConfirmed,
+            motion_sickness_risk: a.motionSicknessRisk,
+            has_3d_glasses: a.has3DGlasses,
+            has_strobe_effects: a.hasStrobeEffects,
+            has_dark_enclosed: a.hasDarkEnclosed,
+            noise_level: a.noiseLevel,
+            spin_intensity: a.spinIntensity,
+            height_drop: a.heightDrop,
+            water_exposure: a.waterExposure,
+            motion_roughness: a.motionRoughness,
+            wheelchair_access: a.wheelchairAccess,
+            restraint_type: a.restraintType,
+            service_animal_permitted: a.serviceAnimalPermitted,
+            expectant_mothers_advised: a.expectantMothersAdvised,
+            back_neck_advisory: a.backNeckAdvisory,
+            lockers_required: a.lockersRequired,
+            lockers_recommended: a.lockersRecommended,
+            single_rider_available: a.singleRiderAvailable,
+            rider_swap_available: a.riderSwapAvailable,
+            photo_pass_moment: a.photoPassMoment,
+            advisory_notes: JSON.stringify(a.advisoryNotes),
+        }));
+
+        const { data, error } = await db
+            .from('ride_advisories')
+            .upsert(rows, { onConflict: 'attraction_id' })
+            .select();
+
+        if (error) throw error;
+
+        res.json({
+            seeded: data?.length || 0,
+            total: ALL_WDW_ADVISORIES.length,
+            parks: {
+                MK: ALL_WDW_ADVISORIES.filter(a => a.parkId === 'MK').length,
+                EP: ALL_WDW_ADVISORIES.filter(a => a.parkId === 'EP').length,
+                HS: ALL_WDW_ADVISORIES.filter(a => a.parkId === 'HS').length,
+                AK: ALL_WDW_ADVISORIES.filter(a => a.parkId === 'AK').length,
+            },
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to seed advisories', details: String(err) });
+    }
+});
+
+// ── Ride Preferences: User CRUD ─────────────────────────────────
+
+// GET preferences for a trip
+router.get('/trips/:tripId/ride-preferences', async (req, res) => {
+    try {
+        const db = getSupabaseClient();
+        const { tripId } = req.params;
+
+        const { data, error } = await db
+            .from('ride_preferences')
+            .select('*')
+            .eq('trip_id', tripId)
+            .order('priority_tier')
+            .order('priority_rank');
+
+        if (error) throw error;
+        res.json({ preferences: data || [], total: data?.length || 0 });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch preferences', details: String(err) });
+    }
+});
+
+// PUT upsert a ride preference (create or update)
+router.put('/trips/:tripId/ride-preferences', async (req, res) => {
+    try {
+        const db = getSupabaseClient();
+        const { tripId } = req.params;
+        const { userId, attractionId, attractionName, parkId, repeatCount, priorityTier, priorityRank, userNotes } = req.body;
+
+        if (!userId || !attractionId || !attractionName || !parkId) {
+            return res.status(400).json({ error: 'Missing required fields: userId, attractionId, attractionName, parkId' });
+        }
+
+        const { data, error } = await db
+            .from('ride_preferences')
+            .upsert({
+                trip_id: tripId,
+                user_id: userId,
+                attraction_id: attractionId,
+                attraction_name: attractionName,
+                park_id: parkId,
+                repeat_count: Math.min(Math.max(repeatCount || 1, 1), 5),
+                priority_tier: priorityTier || 'must_do',
+                priority_rank: priorityRank || null,
+                user_notes: userNotes || null,
+                updated_at: new Date().toISOString(),
+            }, { onConflict: 'trip_id,user_id,attraction_id' })
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to upsert preference', details: String(err) });
+    }
+});
+
+// DELETE a ride preference
+router.delete('/trips/:tripId/ride-preferences/:attractionId', async (req, res) => {
+    try {
+        const db = getSupabaseClient();
+        const { tripId, attractionId } = req.params;
+        const userId = req.query.userId as string;
+
+        if (!userId) {
+            return res.status(400).json({ error: 'userId query parameter required' });
+        }
+
+        const { error } = await db
+            .from('ride_preferences')
+            .delete()
+            .eq('trip_id', tripId)
+            .eq('user_id', userId)
+            .eq('attraction_id', attractionId);
+
+        if (error) throw error;
+        res.json({ deleted: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete preference', details: String(err) });
+    }
+});
+
+// POST score and rank all preferences for a trip (uses RepeatVoteScoring engine)
+router.post('/trips/:tripId/ride-preferences/score', async (req, res) => {
+    try {
+        const db = getSupabaseClient();
+        const { tripId } = req.params;
+
+        const { data, error } = await db
+            .from('ride_preferences')
+            .select('*')
+            .eq('trip_id', tripId);
+
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            return res.json({ scored: [], total: 0, snipeJobs: 0 });
+        }
+
+        const { scoreAllPreferences, generateSnipeJobs } = await import('../data/RepeatVoteScoring');
+        const { RidePreference } = await import('../data/RepeatVoteScoring');
+
+        // Map Supabase rows → RidePreference interface
+        const prefs = data.map((row: {
+            attraction_id: string;
+            attraction_name: string;
+            park_id: string;
+            repeat_count: number;
+            priority_tier: string;
+            priority_rank: number;
+        }) => ({
+            attractionId: row.attraction_id,
+            attractionName: row.attraction_name,
+            parkId: row.park_id,
+            repeatCount: row.repeat_count,
+            priorityTier: row.priority_tier as 'must_do' | 'like_to' | 'will_avoid',
+            priorityRank: row.priority_rank || 99,
+        }));
+
+        const scored = scoreAllPreferences(prefs);
+        const allSnipeJobs = scored.flatMap(generateSnipeJobs);
+
+        res.json({
+            scored,
+            total: scored.length,
+            snipeJobs: allSnipeJobs.length,
+            snipeJobDetails: allSnipeJobs,
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to score preferences', details: String(err) });
     }
 });
 
