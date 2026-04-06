@@ -24,16 +24,16 @@ export class ThemeParksWikiClient {
   private lastRequestTime: number = 0;
   private static readonly MIN_INTERVAL_MS = 5000; // 5s between requests
 
-  // WDW Park entity IDs on ThemeParks.wiki
+  // Park entity IDs on ThemeParks.wiki
   private static readonly PARK_IDS: Record<string, string> = {
     // Walt Disney World
     MK: '75ea578a-adc8-4116-a54d-dccb60765ef9',
     EP: '47f90d2c-e191-4239-a466-5892ef59a88b',
     HS: '288747d1-8b4f-4a64-867e-ea7c9b27bad8',
-    AK: '1c84a229-8862-4648-9c71-eb509571d8f0',
+    AK: '1c84a229-8862-4648-9c71-378ddd2c7693',
     // Disneyland Resort
     DL: '7340550b-c14d-4def-80bb-acdb51d49a66',
-    DCA: '832fcd51-ea19-4e77-85c7-75571f919b33',
+    DCA: '832fcd51-ea19-4e77-85c7-75d5843b127c',
   };
 
   /**

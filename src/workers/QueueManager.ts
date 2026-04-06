@@ -283,13 +283,15 @@ const scoutWorker = new Worker(
             case 'poll-themeparks-wiki': {
                 const { parkSlug } = job.data;
 
-                // Park Hours Guard: only record LL data during operating hours (6 AM – 1 AM ET)
-                const etNowWiki = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-                const etHourWiki = etNowWiki.getHours();
-                const parkOpen = etHourWiki >= 6 || etHourWiki < 1;
+                // Park Hours Guard: only record LL data during operating hours (6 AM – 1 AM local)
+                const isDLR = parkSlug === 'DL' || parkSlug === 'DCA';
+                const tz = isDLR ? 'America/Los_Angeles' : 'America/New_York';
+                const localNow = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+                const localHour = localNow.getHours();
+                const parkOpen = localHour >= 6 || localHour < 1;
 
                 if (!parkOpen) {
-                    console.log(`[ThemeParksWiki] ⏸️  Skipping ${parkSlug} — outside park hours (${etHourWiki}:00 ET)`);
+                    console.log(`[ThemeParksWiki] ⏸️  Skipping ${parkSlug} — outside park hours (${localHour}:00 ${isDLR ? 'PT' : 'ET'})`);
                     break;
                 }
 
@@ -382,14 +384,14 @@ scoutWorker.on("failed", (job, err) => {
         });
         console.log('🔑 Skipper Session Refresh registered (every 30 min)');
 
-        // ThemeParks.wiki Polling — every 5 min for each WDW park
-        for (const parkSlug of ['MK', 'EP', 'HS', 'AK']) {
+        // ThemeParks.wiki Polling — every 5 min for each WDW + DLR park
+        for (const parkSlug of ['MK', 'EP', 'HS', 'AK', 'DL', 'DCA']) {
             await agentQueue.add('poll-themeparks-wiki', { parkSlug }, {
                 repeat: { every: 5 * 60 * 1000 },
                 jobId: `poll-themeparks-wiki-${parkSlug}`
             });
         }
-        console.log('🏰 ThemeParks.wiki polling registered (every 5 min, 4 parks)');
+        console.log('🏰 ThemeParks.wiki polling registered (every 5 min, 6 parks — WDW + DLR)');
 
         // Historical Analytics View Refresh — every 6 hours
         await agentQueue.add('refresh-analytics-views', {}, {
