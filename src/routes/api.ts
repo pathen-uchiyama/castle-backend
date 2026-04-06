@@ -852,4 +852,194 @@ router.get('/admin/whisper/stats', async (req, res) => {
     }
 });
 
+// ── Offline State Reconciliation ────────────────────────────────
+
+// Reconnection handshake — sync state since last timestamp
+router.post('/sync/state', async (req, res) => {
+    try {
+        const { userId, tripId, lastSyncAt, localActions, clientStateHash } = req.body;
+
+        if (!userId || !tripId || !lastSyncAt) {
+            return res.status(400).json({ error: 'userId, tripId, and lastSyncAt are required' });
+        }
+
+        const { OfflineReconciliation } = await import('../services/OfflineReconciliation');
+        const reconciler = new OfflineReconciliation();
+
+        const result = await reconciler.handleSyncRequest({
+            userId,
+            tripId,
+            lastSyncAt,
+            localActions: localActions || [],
+            clientStateHash,
+        });
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: 'Sync failed', details: String(err) });
+    }
+});
+
+// Get trip state history
+router.get('/sync/state/:tripId', async (req, res) => {
+    try {
+        const { tripId } = req.params;
+        const limit = parseInt(req.query.limit as string) || 100;
+
+        const { OfflineReconciliation } = await import('../services/OfflineReconciliation');
+        const reconciler = new OfflineReconciliation();
+        const actions = await reconciler.getTripState(tripId, limit);
+
+        res.json({ tripId, actions, count: actions.length });
+    } catch (err) {
+        res.json({ tripId: req.params.tripId, actions: [], count: 0 });
+    }
+});
+
+// Get pending conflicts for a user
+router.get('/sync/conflicts/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const { OfflineReconciliation } = await import('../services/OfflineReconciliation');
+        const reconciler = new OfflineReconciliation();
+        const conflicts = await reconciler.getPendingConflicts(userId);
+
+        res.json({ userId, conflicts, count: conflicts.length });
+    } catch (err) {
+        res.json({ userId: req.params.userId, conflicts: [], count: 0 });
+    }
+});
+
+// Resolve a conflict
+router.post('/sync/conflicts/resolve', async (req, res) => {
+    try {
+        const { userId, idempotencyKey, choice } = req.body;
+
+        if (!userId || !idempotencyKey || !choice) {
+            return res.status(400).json({ error: 'userId, idempotencyKey, and choice are required' });
+        }
+
+        const { OfflineReconciliation } = await import('../services/OfflineReconciliation');
+        const reconciler = new OfflineReconciliation();
+        const result = await reconciler.resolveConflict(userId, idempotencyKey, choice);
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: 'Conflict resolution failed', details: String(err) });
+    }
+});
+
+// ── Split Party Management ──────────────────────────────────────
+
+// Create a split party configuration
+router.post('/trips/:tripId/split-party', async (req, res) => {
+    try {
+        const { tripId } = req.params;
+        const { partyId, guests, groupAssignments, tier } = req.body;
+
+        if (!partyId || !guests || !groupAssignments) {
+            return res.status(400).json({ error: 'partyId, guests, and groupAssignments are required' });
+        }
+
+        const { SplitPartyManager } = await import('../services/SplitPartyManager');
+
+        const state = SplitPartyManager.createSplit(
+            tripId,
+            partyId,
+            guests,
+            groupAssignments,
+            tier || 'explorer'
+        );
+
+        res.status(201).json(state);
+    } catch (err: any) {
+        // Return validation errors as 400
+        if (err.message?.includes('Maximum') || err.message?.includes('assigned') || err.message?.includes('adult')) {
+            return res.status(400).json({ error: err.message });
+        }
+        res.status(500).json({ error: 'Split party creation failed', details: String(err) });
+    }
+});
+
+// Schedule a reunion point
+router.post('/trips/:tripId/reunion', async (req, res) => {
+    try {
+        const { tripId } = req.params;
+        const { state, parkId, requestedTime, groupIdsToMeet, preferFood } = req.body;
+
+        if (!state || !parkId || !requestedTime) {
+            return res.status(400).json({ error: 'state, parkId, and requestedTime are required' });
+        }
+
+        const { SplitPartyManager } = await import('../services/SplitPartyManager');
+
+        const reunion = SplitPartyManager.scheduleReunion(
+            state,
+            parkId,
+            requestedTime,
+            groupIdsToMeet,
+            preferFood !== false
+        );
+
+        res.json(reunion);
+    } catch (err) {
+        res.status(500).json({ error: 'Reunion scheduling failed', details: String(err) });
+    }
+});
+
+// Check in to a reunion point
+router.post('/trips/:tripId/reunion/:reunionId/checkin', async (req, res) => {
+    try {
+        const { groupId, reunion } = req.body;
+
+        if (!groupId || !reunion) {
+            return res.status(400).json({ error: 'groupId and reunion are required' });
+        }
+
+        const { SplitPartyManager } = await import('../services/SplitPartyManager');
+        const result = SplitPartyManager.checkInToReunion(reunion, groupId);
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: 'Check-in failed', details: String(err) });
+    }
+});
+
+// Check for late groups
+router.post('/trips/:tripId/reunion/:reunionId/late-check', async (req, res) => {
+    try {
+        const { reunion } = req.body;
+
+        if (!reunion) {
+            return res.status(400).json({ error: 'reunion object is required' });
+        }
+
+        const { SplitPartyManager } = await import('../services/SplitPartyManager');
+        const result = SplitPartyManager.checkForLateGroups(reunion);
+
+        res.json(result);
+    } catch (err) {
+        res.json({ isLate: false, lateGroupIds: [], minutesLate: 0 });
+    }
+});
+
+// Merge party back together
+router.post('/trips/:tripId/merge-party', async (req, res) => {
+    try {
+        const { state, tracks } = req.body;
+
+        if (!state || !tracks) {
+            return res.status(400).json({ error: 'state and tracks are required' });
+        }
+
+        const { SplitPartyManager } = await import('../services/SplitPartyManager');
+        const result = SplitPartyManager.mergeParty(state, tracks);
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: 'Party merge failed', details: String(err) });
+    }
+});
+
 export default router;
