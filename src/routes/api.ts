@@ -541,7 +541,6 @@ router.post('/trips/:tripId/ride-preferences/score', async (req, res) => {
         }
 
         const { scoreAllPreferences, generateSnipeJobs } = await import('../data/RepeatVoteScoring');
-        const { RidePreference } = await import('../data/RepeatVoteScoring');
 
         // Map Supabase rows → RidePreference interface
         const prefs = data.map((row: {
@@ -571,6 +570,125 @@ router.post('/trips/:tripId/ride-preferences/score', async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ error: 'Failed to score preferences', details: String(err) });
+    }
+});
+
+// ── LLM Token Circuit Breaker: Admin Telemetry ──────────────────
+
+router.get('/admin/llm-usage', async (_req, res) => {
+    try {
+        const { LLMTokenCircuitBreaker } = await import('../services/LLMTokenCircuitBreaker');
+        const llmCB = new LLMTokenCircuitBreaker();
+        const stats = await llmCB.getUsageStats();
+        res.json(stats);
+    } catch (err) {
+        // If Redis is unavailable, return empty stats
+        res.json({
+            daily: { tokens: 0, costUsd: 0, ceiling: 500 },
+            hourly: { tokens: 0, costUsd: 0, ceiling: 100 },
+            circuitState: { state: 'CLOSED', reason: null },
+            recentInvocations: [],
+            quotas: {},
+            note: 'Redis unavailable — showing defaults',
+        });
+    }
+});
+
+router.post('/admin/llm-circuit/reset', async (_req, res) => {
+    try {
+        const { LLMTokenCircuitBreaker } = await import('../services/LLMTokenCircuitBreaker');
+        const llmCB = new LLMTokenCircuitBreaker();
+        await llmCB.resetCircuit();
+        res.json({ success: true, message: 'LLM circuit breaker reset to CLOSED' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to reset circuit', details: String(err) });
+    }
+});
+
+// ── Priority Queue: Stats + Job Submission ──────────────────────
+
+router.get('/admin/queue-stats', async (_req, res) => {
+    try {
+        const { PriorityQueueManager } = await import('../services/PriorityQueue');
+        const pq = new PriorityQueueManager();
+        const stats = await pq.getStats();
+        res.json(stats);
+    } catch (err) {
+        res.json({
+            waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0,
+            p1Waiting: 0, p2Waiting: 0, p3Waiting: 0,
+            isPeakHours: false,
+            workerAllocation: { p1Percent: 50, p2p3Percent: 50 },
+            note: 'Queue unavailable — showing defaults',
+        });
+    }
+});
+
+router.get('/admin/queue-dlq', async (_req, res) => {
+    try {
+        const { PriorityQueueManager } = await import('../services/PriorityQueue');
+        const pq = new PriorityQueueManager();
+        const jobs = await pq.getDLQJobs(50);
+        res.json({ jobs: jobs.map(j => ({ id: j.id, data: j.data })), count: jobs.length });
+    } catch (err) {
+        res.json({ jobs: [], count: 0 });
+    }
+});
+
+// Submit a snipe job (returns 202 Accepted + job ID)
+router.post('/snipe/submit', async (req, res) => {
+    try {
+        const { userId, tripId, attractionId, attractionName, preferredWindows, tier } = req.body;
+
+        if (!userId || !tripId || !attractionId || !attractionName || !preferredWindows) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // Rate limit check
+        const { RateLimiter } = await import('../services/RateLimiter');
+        const rateLimiter = new RateLimiter();
+        const rateCheck = await rateLimiter.checkLimits(userId);
+
+        if (!rateCheck.allowed) {
+            return res.status(429).json({
+                error: 'Rate limited',
+                limitedBy: (rateCheck as { limitedBy?: string }).limitedBy,
+                retryAfterMs: rateCheck.retryAfterMs,
+                remaining: rateCheck.remaining,
+            });
+        }
+
+        // LLM circuit breaker check (snipe jobs may trigger LLM calls)
+        const { LLMTokenCircuitBreaker } = await import('../services/LLMTokenCircuitBreaker');
+        const llmCB = new LLMTokenCircuitBreaker();
+        const llmCheck = await llmCB.canInvoke(userId, tier || 'explorer', 500);
+
+        // Submit to priority queue
+        const { PriorityQueueManager } = await import('../services/PriorityQueue');
+        const pq = new PriorityQueueManager();
+        const result = await pq.submitSnipeJob({
+            idempotencyKey: `${userId}:${attractionId}:${preferredWindows[0]}`,
+            userId,
+            tripId,
+            attractionId,
+            attractionName,
+            preferredWindows,
+            tier: tier || 'explorer',
+        });
+
+        // 202 Accepted — job is queued
+        res.status(202).json({
+            status: 'accepted',
+            jobId: result.jobId,
+            priority: result.priority,
+            position: result.position,
+            llmAvailable: llmCheck.allowed,
+        });
+    } catch (err: any) {
+        if (err.message?.includes('Duplicate snipe')) {
+            return res.status(409).json({ error: err.message });
+        }
+        res.status(500).json({ error: 'Failed to submit snipe job', details: String(err) });
     }
 });
 
