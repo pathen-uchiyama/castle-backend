@@ -54,11 +54,11 @@ export const options = {
             vus: 50,
             maxDuration: '120s',
         },
-        // 40 split party families (3 groups each = 120 parallel tracks)
+        // 80 split party families (avg 3 groups each = 240 parallel tracks)
         split_party_recal: {
             executor: 'shared-iterations',
-            iterations: 40,
-            vus: 20,
+            iterations: 80,
+            vus: 40,
             startTime: '30s',
             maxDuration: '90s',
             exec: 'splitPartyRecalibration',
@@ -179,6 +179,7 @@ export default function () {
             guests,
             scoredRides,
             existingItinerary,
+            strategyType: __ITER % 2 === 0 ? 'A' : 'B',
         }), { headers: { 'Content-Type': 'application/json' } });
 
         recalibrationLatency.add(Date.now() - startTime);

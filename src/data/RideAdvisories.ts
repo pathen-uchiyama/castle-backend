@@ -378,6 +378,185 @@ export const NEW_ATTRACTIONS: RideAdvisory[] = [
     advisoryNotes: ['Based on Disneyland version — enhanced motion base vehicle', 'Replacing DINOSAUR ride system', 'Expected height requirement based on DL version'] },
 ];
 
+// ─── DISNEYLAND (DL) ────────────────────────────────────────────────
+
+export const DL_ADVISORIES: RideAdvisory[] = [
+  { attractionId: 'DL_SPACE', name: 'Space Mountain', parkId: 'DL', land: 'Tomorrowland', heightRequirementInches: 40,
+    ...OPEN_STATUS, motionSicknessRisk: 'moderate', has3DGlasses: false, hasStrobeEffects: true, hasDarkEnclosed: true,
+    noiseLevel: 'loud', spinIntensity: 'none', heightDrop: 'small', waterExposure: 'dry', motionRoughness: 'moderate',
+    wheelchairAccess: 'must_transfer', restraintType: 'lap_bar', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: true,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: true, riderSwapAvailable: true, photoPassMoment: true,
+    advisoryNotes: ['Complete darkness throughout', 'Side-by-side seating unlike WDW version'] },
+  { attractionId: 'DL_MATTERHORN', name: 'Matterhorn Bobsleds', parkId: 'DL', land: 'Fantasyland', heightRequirementInches: 42,
+    ...OPEN_STATUS, motionSicknessRisk: 'mild', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'loud', spinIntensity: 'none', heightDrop: 'small', waterExposure: 'may_get_sprayed', motionRoughness: 'rough',
+    wheelchairAccess: 'must_transfer', restraintType: 'seat_belt', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: true,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: true, riderSwapAvailable: true, photoPassMoment: true,
+    advisoryNotes: ['Extremely rough and bumpy', 'Includes dark encounters with the Abominable Snowman', 'May splash water at the end'] },
+  { attractionId: 'DL_INDY', name: 'Indiana Jones Adventure', parkId: 'DL', land: 'Adventureland', heightRequirementInches: 46,
+    ...OPEN_STATUS, motionSicknessRisk: 'moderate', has3DGlasses: false, hasStrobeEffects: true, hasDarkEnclosed: true,
+    noiseLevel: 'loud', spinIntensity: 'none', heightDrop: 'small', waterExposure: 'dry', motionRoughness: 'rough',
+    wheelchairAccess: 'must_transfer', restraintType: 'seat_belt', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: true,
+    lockersRequired: false, lockersRecommended: true, singleRiderAvailable: true, riderSwapAvailable: true, photoPassMoment: false,
+    advisoryNotes: ['Violent jerky motion and sudden stops', 'Dark, loud, and intense for young children', 'Snakes and insects featured'] },
+  { attractionId: 'DL_BTM', name: 'Big Thunder Mountain Railroad', parkId: 'DL', land: 'Frontierland', heightRequirementInches: 40,
+    ...OPEN_STATUS, motionSicknessRisk: 'mild', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: false,
+    noiseLevel: 'moderate', spinIntensity: 'none', heightDrop: 'small', waterExposure: 'dry', motionRoughness: 'moderate',
+    wheelchairAccess: 'must_transfer', restraintType: 'lap_bar', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: true,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: true, photoPassMoment: false,
+    advisoryNotes: ['Jerky turns and bumpy track', 'Features loud explosion effects in the tunnel'] },
+  { attractionId: 'DL_PIRATES', name: 'Pirates of the Caribbean', parkId: 'DL', land: 'New Orleans Square', heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'none', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'moderate', spinIntensity: 'none', heightDrop: 'small', waterExposure: 'may_get_sprayed', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'none', serviceAnimalPermitted: true, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: false, photoPassMoment: false,
+    advisoryNotes: ['Two drops in darkness', 'Longer than WDW version'] },
+  { attractionId: 'DL_HM', name: 'Haunted Mansion', parkId: 'DL', land: 'New Orleans Square', heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'none', has3DGlasses: false, hasStrobeEffects: true, hasDarkEnclosed: true,
+    noiseLevel: 'moderate', spinIntensity: 'mild', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'lap_bar', serviceAnimalPermitted: true, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: false, photoPassMoment: true,
+    advisoryNotes: ['Stretching room is actually an elevator', 'Dark and potentially scary for young kids'] },
+  { attractionId: 'DL_RISE', name: 'Star Wars: Rise of the Resistance', parkId: 'DL', land: "Galaxy's Edge", heightRequirementInches: 40,
+    ...OPEN_STATUS, motionSicknessRisk: 'moderate', has3DGlasses: false, hasStrobeEffects: true, hasDarkEnclosed: true,
+    noiseLevel: 'loud', spinIntensity: 'mild', heightDrop: 'small', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'seat_belt', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: true, photoPassMoment: false,
+    advisoryNotes: ['Identical to WDW version'] },
+  { attractionId: 'DL_SMUGGLERS', name: "Millennium Falcon: Smugglers Run", parkId: 'DL', land: "Galaxy's Edge", heightRequirementInches: 38,
+    ...OPEN_STATUS, motionSicknessRisk: 'moderate', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'moderate', spinIntensity: 'none', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'moderate',
+    wheelchairAccess: 'must_transfer', restraintType: 'seat_belt', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: true, riderSwapAvailable: true, photoPassMoment: true,
+    advisoryNotes: ['Identical to WDW version'] },
+  { attractionId: 'DL_MMM', name: "Mickey & Minnie's Runaway Railway", parkId: 'DL', land: "Mickey's Toontown", heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'mild', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'moderate', spinIntensity: 'mild', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'lap_bar', serviceAnimalPermitted: false, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: true, photoPassMoment: false,
+    advisoryNotes: ['Identical to WDW version but with different queue'] },
+  { attractionId: 'DL_STAR_TOURS', name: 'Star Tours – The Adventures Continue', parkId: 'DL', land: 'Tomorrowland', heightRequirementInches: 40,
+    ...OPEN_STATUS, motionSicknessRisk: 'moderate', has3DGlasses: true, hasStrobeEffects: true, hasDarkEnclosed: true,
+    noiseLevel: 'loud', spinIntensity: 'none', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'moderate',
+    wheelchairAccess: 'must_transfer', restraintType: 'seat_belt', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: true,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: true, photoPassMoment: false,
+    advisoryNotes: ['Motion simulator with 3D', 'High nausea risk'] },
+  { attractionId: 'DL_ROGER_RABBIT', name: "Roger Rabbit's Car Toon Spin", parkId: 'DL', land: "Mickey's Toontown", heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'intense', has3DGlasses: false, hasStrobeEffects: true, hasDarkEnclosed: true,
+    noiseLevel: 'loud', spinIntensity: 'intense', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'lap_bar', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: true, photoPassMoment: false,
+    advisoryNotes: ['Rider-controlled spinning while traversing a dark ride', 'Visually loud and disorienting'] },
+  { attractionId: 'DL_TEA_PARTY', name: 'Mad Tea Party', parkId: 'DL', land: 'Fantasyland', heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'intense', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: false,
+    noiseLevel: 'moderate', spinIntensity: 'intense', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'none', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: false, photoPassMoment: false,
+    advisoryNotes: ['Outdoor without a roof (unlike WDW)'] },
+  { attractionId: 'DL_NEMO', name: 'Finding Nemo Submarine Voyage', parkId: 'DL', land: 'Tomorrowland', heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'mild', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'moderate', spinIntensity: 'none', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'none', serviceAnimalPermitted: true, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: false, photoPassMoment: false,
+    advisoryNotes: ['Claustrophobic environment', 'Access requires navigating narrow spiral stairs', 'Alternative viewing room available for accessible guests'] },
+  { attractionId: 'DL_PETER', name: "Peter Pan's Flight", parkId: 'DL', land: 'Fantasyland', heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'mild', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'quiet', spinIntensity: 'none', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'lap_bar', serviceAnimalPermitted: false, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: false, photoPassMoment: false,
+    advisoryNotes: ['Suspended track, dark ride'] },
+  { attractionId: 'DL_TOAD', name: "Mr. Toad's Wild Ride", parkId: 'DL', land: 'Fantasyland', heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'mild', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'moderate', spinIntensity: 'none', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'lap_bar', serviceAnimalPermitted: false, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: false, photoPassMoment: false,
+    advisoryNotes: ['Sudden sharp turns', 'Simulated train collision and "Hell" sequence'] },
+  { attractionId: 'DL_SNOW_WHITE', name: "Snow White's Enchanted Wish", parkId: 'DL', land: 'Fantasyland', heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'none', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'moderate', spinIntensity: 'none', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'lap_bar', serviceAnimalPermitted: false, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: false, photoPassMoment: false,
+    advisoryNotes: ['Dark ride, features Evil Queen/Witch'] },
+  { attractionId: 'DL_ALICE', name: "Alice in Wonderland", parkId: 'DL', land: 'Fantasyland', heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'none', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'moderate', spinIntensity: 'none', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'lap_bar', serviceAnimalPermitted: false, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: false, photoPassMoment: false,
+    advisoryNotes: ['Two-story dark ride with an outdoor section'] },
+];
+
+// ─── DISNEY CALIFORNIA ADVENTURE (DCA) ──────────────────────────────
+
+export const DCA_ADVISORIES: RideAdvisory[] = [
+  { attractionId: 'DCA_RSR', name: 'Radiator Springs Racers', parkId: 'DCA', land: 'Cars Land', heightRequirementInches: 40,
+    ...OPEN_STATUS, motionSicknessRisk: 'mild', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: false,
+    noiseLevel: 'loud', spinIntensity: 'none', heightDrop: 'small', waterExposure: 'dry', motionRoughness: 'moderate',
+    wheelchairAccess: 'must_transfer', restraintType: 'seat_belt', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: true, riderSwapAvailable: true, photoPassMoment: true,
+    advisoryNotes: ['Fast outdoor acceleration (speeds up to 40 mph)', 'Uses same ride system as Test Track'] },
+  { attractionId: 'DCA_GUARDIANS', name: 'Guardians of the Galaxy – Mission: BREAKOUT!', parkId: 'DCA', land: 'Avengers Campus', heightRequirementInches: 40,
+    ...OPEN_STATUS, motionSicknessRisk: 'moderate', has3DGlasses: false, hasStrobeEffects: true, hasDarkEnclosed: true,
+    noiseLevel: 'loud', spinIntensity: 'none', heightDrop: 'large', waterExposure: 'dry', motionRoughness: 'moderate',
+    wheelchairAccess: 'must_transfer', restraintType: 'seat_belt', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: true,
+    lockersRequired: false, lockersRecommended: true, singleRiderAvailable: false, riderSwapAvailable: true, photoPassMoment: true,
+    advisoryNotes: ['Randomized rapid up-and-down drop sequences', 'Intense stomach-drop feeling', 'Gantry lift mechanism'] },
+  { attractionId: 'DCA_INCREDICOASTER', name: 'Incredicoaster', parkId: 'DCA', land: 'Pixar Pier', heightRequirementInches: 48,
+    ...OPEN_STATUS, motionSicknessRisk: 'intense', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: false,
+    noiseLevel: 'loud', spinIntensity: 'none', heightDrop: 'large', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'over_shoulder', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: true,
+    lockersRequired: false, lockersRecommended: true, singleRiderAvailable: true, riderSwapAvailable: true, photoPassMoment: true,
+    advisoryNotes: ['High-speed launch', 'Includes one loop (inversion)'] },
+  { attractionId: 'DCA_TOY_MANIA', name: 'Toy Story Midway Mania!', parkId: 'DCA', land: 'Pixar Pier', heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'mild', has3DGlasses: true, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'moderate', spinIntensity: 'moderate', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'none', serviceAnimalPermitted: false, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: false, photoPassMoment: false,
+    advisoryNotes: ['3D shooting gallery — vehicle spins violently between scenes'] },
+  { attractionId: 'DCA_WEB', name: 'WEB SLINGERS: A Spider-Man Adventure', parkId: 'DCA', land: 'Avengers Campus', heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'mild', has3DGlasses: true, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'moderate', spinIntensity: 'mild', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'none', serviceAnimalPermitted: false, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: true, riderSwapAvailable: true, photoPassMoment: true,
+    advisoryNotes: ['Interactive 3D ride using arm gestures', 'Requires significant arm movement'] },
+  { attractionId: 'DCA_SOARIN', name: 'Soarin\' Around the World', parkId: 'DCA', land: 'Grizzly Peak', heightRequirementInches: 40,
+    ...OPEN_STATUS, motionSicknessRisk: 'moderate', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'moderate', spinIntensity: 'none', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'seat_belt', serviceAnimalPermitted: false, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: true, riderSwapAvailable: true, photoPassMoment: false,
+    advisoryNotes: ['Identical to WDW version'] },
+  { attractionId: 'DCA_GRIZZLY', name: 'Grizzly River Run', parkId: 'DCA', land: 'Grizzly Peak', heightRequirementInches: 42,
+    ...OPEN_STATUS, motionSicknessRisk: 'mild', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: false,
+    noiseLevel: 'moderate', spinIntensity: 'moderate', heightDrop: 'small', waterExposure: 'will_get_soaked', motionRoughness: 'moderate',
+    wheelchairAccess: 'must_transfer', restraintType: 'seat_belt', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: true,
+    lockersRequired: false, lockersRecommended: true, singleRiderAvailable: true, riderSwapAvailable: true, photoPassMoment: false,
+    advisoryNotes: ['Spinning raft ride with significant drops', 'YOU WILL GET SOAKED', 'Avoid before indoor dining or cool evenings'] },
+  { attractionId: 'DCA_MERMAID', name: 'The Little Mermaid - Ariel\'s Undersea Adventure', parkId: 'DCA', land: 'Paradise Gardens Park', heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'none', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'quiet', spinIntensity: 'none', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'lap_bar', serviceAnimalPermitted: true, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: false, photoPassMoment: false,
+    advisoryNotes: ['Omnimover dark ride', 'Identical to WDW version'] },
+  { attractionId: 'DCA_GOOFY', name: 'Goofy\'s Sky School', parkId: 'DCA', land: 'Paradise Gardens Park', heightRequirementInches: 42,
+    ...OPEN_STATUS, motionSicknessRisk: 'moderate', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: false,
+    noiseLevel: 'moderate', spinIntensity: 'none', heightDrop: 'small', waterExposure: 'dry', motionRoughness: 'rough',
+    wheelchairAccess: 'must_transfer', restraintType: 'lap_bar', serviceAnimalPermitted: false, expectantMothersAdvised: true, backNeckAdvisory: true,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: true, riderSwapAvailable: true, photoPassMoment: false,
+    advisoryNotes: ['Wild mouse coaster with unbanked switchback turns', 'Jerky and abrupt lateral movements'] },
+  { attractionId: 'DCA_MATERS', name: 'Mater\'s Junkyard Jamboree', parkId: 'DCA', land: 'Cars Land', heightRequirementInches: 32,
+    ...OPEN_STATUS, motionSicknessRisk: 'moderate', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: false,
+    noiseLevel: 'moderate', spinIntensity: 'moderate', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'seat_belt', serviceAnimalPermitted: false, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: true, photoPassMoment: false,
+    advisoryNotes: ['Whip-style ride that swings outward', 'Similar to Alien Swirling Saucers at WDW'] },
+  { attractionId: 'DCA_MONSTERS', name: 'Monsters, Inc. Mike & Sulley to the Rescue!', parkId: 'DCA', land: 'Hollywood Land', heightRequirementInches: null,
+    ...OPEN_STATUS, motionSicknessRisk: 'none', has3DGlasses: false, hasStrobeEffects: false, hasDarkEnclosed: true,
+    noiseLevel: 'moderate', spinIntensity: 'none', heightDrop: 'none', waterExposure: 'dry', motionRoughness: 'smooth',
+    wheelchairAccess: 'must_transfer', restraintType: 'lap_bar', serviceAnimalPermitted: true, expectantMothersAdvised: false, backNeckAdvisory: false,
+    lockersRequired: false, lockersRecommended: false, singleRiderAvailable: false, riderSwapAvailable: false, photoPassMoment: false,
+    advisoryNotes: ['Standard dark ride, great for all ages'] },
+];
+
+
 // ─── COMBINED EXPORT ────────────────────────────────────────────────
 
 export const ALL_WDW_ADVISORIES: RideAdvisory[] = [
@@ -388,16 +567,26 @@ export const ALL_WDW_ADVISORIES: RideAdvisory[] = [
   ...NEW_ATTRACTIONS,
 ];
 
+export const ALL_DLR_ADVISORIES: RideAdvisory[] = [
+  ...DL_ADVISORIES,
+  ...DCA_ADVISORIES,
+];
+
+export const ALL_ADVISORIES: RideAdvisory[] = [
+  ...ALL_WDW_ADVISORIES,
+  ...ALL_DLR_ADVISORIES,
+];
+
 /** Lookup by attractionId for O(1) access */
 export const ADVISORY_MAP: Record<string, RideAdvisory> = Object.fromEntries(
-  ALL_WDW_ADVISORIES.map(a => [a.attractionId, a])
+  ALL_ADVISORIES.map(a => [a.attractionId, a])
 );
 
 /** Get all rides with a specific advisory flag */
 export function getRidesWithAdvisory(
   filter: Partial<Pick<RideAdvisory, 'motionSicknessRisk' | 'has3DGlasses' | 'hasStrobeEffects' | 'waterExposure' | 'heightDrop'>>
 ): RideAdvisory[] {
-  return ALL_WDW_ADVISORIES.filter(ride => {
+  return ALL_ADVISORIES.filter(ride => {
     for (const [key, value] of Object.entries(filter)) {
       if (ride[key as keyof RideAdvisory] !== value) return false;
     }
@@ -407,7 +596,7 @@ export function getRidesWithAdvisory(
 
 /** Get rides safe for motion-sensitive riders */
 export function getMotionSafeRides(parkId?: ParkID): RideAdvisory[] {
-  return ALL_WDW_ADVISORIES.filter(ride =>
+  return ALL_ADVISORIES.filter(ride =>
     ride.motionSicknessRisk === 'none' &&
     ride.spinIntensity === 'none' &&
     (!parkId || ride.parkId === parkId)
@@ -416,5 +605,5 @@ export function getMotionSafeRides(parkId?: ParkID): RideAdvisory[] {
 
 /** Get rides requiring lockers */
 export function getLockerRides(): RideAdvisory[] {
-  return ALL_WDW_ADVISORIES.filter(ride => ride.lockersRequired);
+  return ALL_ADVISORIES.filter(ride => ride.lockersRequired);
 }

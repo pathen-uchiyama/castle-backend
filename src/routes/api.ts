@@ -335,11 +335,11 @@ router.get('/ride-advisories', async (req, res) => {
         });
     } catch (err) {
         // Return from TypeScript data if Supabase table is empty
-        const { ALL_WDW_ADVISORIES } = await import('../data/RideAdvisories');
-        const parkId = req.query.parkId as string | undefined;
-        const filtered = parkId
-            ? ALL_WDW_ADVISORIES.filter(a => a.parkId === parkId)
-            : ALL_WDW_ADVISORIES;
+        const { ALL_ADVISORIES } = await import('../data/RideAdvisories');
+        
+        let filtered = (req.query.parkId as string | undefined)
+            ? ALL_ADVISORIES.filter(a => a.parkId === (req.query.parkId as string))
+            : ALL_ADVISORIES;
         res.json({
             advisories: filtered,
             total: filtered.length,
@@ -381,10 +381,10 @@ router.get('/ride-advisories/:attractionId', async (req, res) => {
 router.post('/admin/seed-advisories', async (_req, res) => {
     try {
         const db = getSupabaseClient();
-        const { ALL_WDW_ADVISORIES } = await import('../data/RideAdvisories');
+        const { ALL_ADVISORIES } = await import('../data/RideAdvisories');
 
         // Transform camelCase TypeScript → snake_case Supabase
-        const rows = ALL_WDW_ADVISORIES.map(a => ({
+        const rows = ALL_ADVISORIES.map(a => ({
             attraction_id: a.attractionId,
             name: a.name,
             park_id: a.parkId,
@@ -429,12 +429,14 @@ router.post('/admin/seed-advisories', async (_req, res) => {
 
         res.json({
             seeded: data?.length || 0,
-            total: ALL_WDW_ADVISORIES.length,
+            total: ALL_ADVISORIES.length,
             parks: {
-                MK: ALL_WDW_ADVISORIES.filter(a => a.parkId === 'MK').length,
-                EP: ALL_WDW_ADVISORIES.filter(a => a.parkId === 'EP').length,
-                HS: ALL_WDW_ADVISORIES.filter(a => a.parkId === 'HS').length,
-                AK: ALL_WDW_ADVISORIES.filter(a => a.parkId === 'AK').length,
+                MK: ALL_ADVISORIES.filter(a => a.parkId === 'MK').length,
+                EP: ALL_ADVISORIES.filter(a => a.parkId === 'EP').length,
+                HS: ALL_ADVISORIES.filter(a => a.parkId === 'HS').length,
+                AK: ALL_ADVISORIES.filter(a => a.parkId === 'AK').length,
+                DL: ALL_ADVISORIES.filter(a => a.parkId === 'DL').length,
+                DCA: ALL_ADVISORIES.filter(a => a.parkId === 'DCA').length,
             },
         });
     } catch (err) {
@@ -738,8 +740,8 @@ router.post('/trips/:tripId/recalibrate', async (req, res) => {
             advisories = advisoryData;
         } else {
             // Fallback to TypeScript data
-            const { ALL_WDW_ADVISORIES } = await import('../data/RideAdvisories');
-            advisories = ALL_WDW_ADVISORIES.filter((a: { parkId: string }) => a.parkId === parkId);
+            const { ALL_ADVISORIES } = await import('../data/RideAdvisories');
+            advisories = ALL_ADVISORIES.filter((a: { parkId: string }) => a.parkId === parkId);
         }
 
         // Run recalibration engine

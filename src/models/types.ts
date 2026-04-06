@@ -17,6 +17,7 @@ export type StepStatus = 'pending' | 'completed' | 'skipped' | 'down';
 export type StepType = 'ride' | 'character' | 'food' | 'transport' | 'break' | 'show' | 'snack';
 
 export interface StrategyProfile {
+    strategyType: 'A' | 'B'; // A = Strategist (Options), B = Believer (Curated Auto-Routes)
     pacingFilter: 'intense' | 'moderate' | 'relaxed';
     primaryFocus: 'thrills' | 'toddlers' | 'classic' | 'shows';
     diningStyle: 'snacks' | 'quick' | 'table' | 'signature';

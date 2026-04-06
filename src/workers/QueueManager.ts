@@ -145,6 +145,7 @@ const scoutWorker = new Worker(
 
                 // TODO: In a real app, fetch the true Trip Strategy from Firestore
                 const mockStrategy: StrategyProfile = {
+                    strategyType: 'B',
                     pacingFilter: 'intense',
                     primaryFocus: 'thrills',
                     diningStyle: 'quick',

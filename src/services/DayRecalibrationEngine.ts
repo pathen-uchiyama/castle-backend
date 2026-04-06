@@ -115,6 +115,7 @@ export interface CalibrationInput {
     existingItinerary: ItineraryStep[];
     activeSnipeCount: number;
     totalActiveUsers: number;
+    strategyType?: 'A' | 'B';
 }
 
 export interface CalibrationResult {
@@ -128,6 +129,14 @@ export interface CalibrationResult {
     diversifiedSlots: DiversifiedSlot[];
     /** Advisory-enriched itinerary steps */
     enrichedSteps: ItineraryStep[];
+    /** A/B response pattern payload for flash mobs or closures */
+    strategyResponse?: {
+        type: 'A' | 'B';
+        actionTaken: string;
+        options?: string[]; // E.g. ride names to suggest
+    };
+    /** Sequence warnings for bad scheduling (e.g., wet ride before dinner) */
+    scheduleWarnings: string[];
 }
 
 export interface FlashMobWarning {
@@ -191,12 +200,35 @@ export class DayRecalibrationEngine {
             input.guests
         );
 
+        // Layer 5: Sequence Constraints (e.g. meals vs intense rides)
+        const scheduleWarnings = this.analyzeSequenceConstraints(input.existingItinerary, input.advisories);
+
+        // Layer 6: Strategy Type (A vs B) handling
+        let strategyResponse: CalibrationResult['strategyResponse'];
+        if (flashMobWarnings.length > 0 || filtered.length > 0) {
+            const type = input.strategyType || 'B';
+            if (type === 'A') {
+                strategyResponse = {
+                    type: 'A',
+                    actionTaken: 'Provided options due to disruptions / flash mobs.',
+                    options: eligible.slice(0, 3).map(r => r.attractionName)
+                };
+            } else {
+                strategyResponse = {
+                    type: 'B',
+                    actionTaken: 'Auto-rerouted the itinerary around closures and density.',
+                };
+            }
+        }
+
         return {
             eligibleRides: eligible,
             filteredRides: filtered,
             flashMobWarnings,
             diversifiedSlots,
             enrichedSteps,
+            scheduleWarnings,
+            strategyResponse
         };
     }
 
@@ -474,5 +506,43 @@ export class DayRecalibrationEngine {
 
             return enriched;
         });
+    }
+
+    // ── Layer 5: Sequence Constraints ───────────────────────────
+
+    /**
+     * Look at the chronological sequence of steps to prevent bad scheduling
+     * like "intense motion sickness ride right after food" or "getting soaked before a sit-down meal".
+     */
+    static analyzeSequenceConstraints(
+        steps: ItineraryStep[],
+        advisories: RideAdvisory[]
+    ): string[] {
+        const warnings: string[] = [];
+        const advisoryMap = new Map(advisories.map(a => [a.attractionId, a]));
+
+        // Check sequential proximity
+        for (let i = 0; i < steps.length - 1; i++) {
+            const current = steps[i];
+            const next = steps[i + 1];
+
+            // Scenario 1: Food followed by Intense Ride
+            if (current.step_type === 'food' || current.step_type === 'snack') {
+                const nextAdv = advisoryMap.get(next.id) || advisoryMap.get(next.step_name);
+                if (nextAdv && (nextAdv.motionSicknessRisk === 'intense' || nextAdv.motionSicknessRisk === 'moderate')) {
+                    warnings.push(`Warning: Riding ${nextAdv.name} (Motion Risk: ${nextAdv.motionSicknessRisk}) immediately after food is not recommended.`);
+                }
+            }
+
+            // Scenario 2: Getting soaked before dinner/table-service
+            if (current.step_type === 'ride') {
+                const curAdv = advisoryMap.get(current.id) || advisoryMap.get(current.step_name);
+                if (curAdv && curAdv.waterExposure === 'will_get_soaked' && next.step_type === 'food') {
+                    warnings.push(`Warning: You will get soaked on ${curAdv.name} right before your food reservation!`);
+                }
+            }
+        }
+
+        return warnings;
     }
 }
