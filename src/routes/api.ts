@@ -4,7 +4,7 @@ import { PaymentController } from '../controllers/PaymentController';
 import { ParkController } from '../controllers/ParkController';
 import { TelemetryController } from '../controllers/TelemetryController';
 import {
-    healthProbe, bg1Sync, circuitBreaker, historicalAnalytics,
+    healthProbe, bg1Sync, circuitBreaker, historicalAnalytics, themeParksWiki,
 } from '../workers/QueueManager';
 
 const router = Router();
@@ -133,6 +133,35 @@ router.get('/admin/ll-availability', async (_req, res) => {
         res.json(data);
     } catch (err) {
         res.status(500).json({ error: 'LL availability failed', details: String(err) });
+    }
+});
+// Live Wait Times — real-time from ThemeParks.wiki for all parks
+router.get('/admin/live-wait-times', async (_req, res) => {
+    try {
+        const results: any[] = [];
+        const parks = ['MK', 'EP', 'HS', 'AK', 'DL', 'DCA'];
+        for (const parkSlug of parks) {
+            const liveData = await themeParksWiki.getLiveData(parkSlug);
+            for (const entity of liveData) {
+                if (entity.entityType !== 'ATTRACTION' && entity.entityType !== 'SHOW') continue;
+                results.push({
+                    id: entity.id,
+                    name: entity.name,
+                    park: parkSlug,
+                    type: entity.entityType === 'SHOW' ? 'Show' : 'Ride',
+                    status: entity.status,
+                    currentWait: entity.queue?.STANDBY?.waitTime ?? null,
+                    llReturnTime: entity.queue?.RETURN_TIME?.returnStart ?? entity.queue?.PAID_RETURN_TIME?.returnStart ?? null,
+                    llType: entity.queue?.PAID_RETURN_TIME ? 'Individual LL' : entity.queue?.RETURN_TIME ? 'Tier 1' : null,
+                    llAvailable: (entity.queue?.RETURN_TIME?.state === 'AVAILABLE') || (entity.queue?.PAID_RETURN_TIME?.state === 'AVAILABLE') || false,
+                    llPrice: entity.queue?.PAID_RETURN_TIME?.price?.formatted ?? null,
+                    vqStatus: entity.queue?.BOARDING_GROUP?.allocationStatus ?? null,
+                });
+            }
+        }
+        res.json(results);
+    } catch (err) {
+        res.status(500).json({ error: 'Live wait times failed', details: String(err) });
     }
 });
 

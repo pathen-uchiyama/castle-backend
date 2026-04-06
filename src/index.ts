@@ -1,10 +1,3 @@
-// DEBUG: Log raw env vars BEFORE dotenv loads
-console.log('🔍 RAW process.env.REDIS_URL =', process.env.REDIS_URL ? process.env.REDIS_URL.replace(/\/\/.*@/, '//***@') : 'UNDEFINED');
-console.log('🔍 RAW process.env.SUPABASE_URL =', process.env.SUPABASE_URL ? 'SET' : 'UNDEFINED');
-console.log('🔍 RAW process.env.PORT =', process.env.PORT || 'UNDEFINED');
-// Log ALL env var keys (no values) for debugging
-console.log('🔍 ALL ENV KEYS:', Object.keys(process.env).filter(k => !k.startsWith('npm_')).join(', '));
-
 import express from 'express';
 import cors from 'cors';
 import { env } from './config/env';

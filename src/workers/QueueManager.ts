@@ -38,9 +38,7 @@ process.on('uncaughtException', (err: any) => {
     }
 });
 
-// Debug: log which Redis URL is being used
 const redisUrl = process.env.REDIS_URL || env.REDIS_URL;
-console.log(`🔍 process.env.REDIS_URL = ${process.env.REDIS_URL ? 'SET (' + process.env.REDIS_URL.replace(/\/\/.*@/, '//***@') + ')' : 'UNDEFINED (using fallback: ' + env.REDIS_URL.replace(/\/\/.*@/, '//***@') + ')'}`);
 
 const connection = new Redis(redisUrl, {
     maxRetriesPerRequest: null,
