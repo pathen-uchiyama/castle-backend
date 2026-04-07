@@ -1,8 +1,0 @@
-name = "castle-email-sniffer"
-main = "src/index.ts"
-compatibility_date = "2024-03-01"
-
-# Environment variables (override in dashboard or CI)
-# [vars]
-# API_URL = "https://your-production-url.com"
-# API_KEY = "your-secret-key"

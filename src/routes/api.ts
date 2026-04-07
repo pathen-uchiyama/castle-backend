@@ -5,6 +5,7 @@ import { ParkController } from '../controllers/ParkController';
 import { TelemetryController } from '../controllers/TelemetryController';
 import {
     healthProbe, bg1Sync, circuitBreaker, historicalAnalytics, themeParksWiki,
+    disneyAPIClient, sessionManager
 } from '../workers/QueueManager';
 import { getSupabaseClient } from '../config/supabase';
 
@@ -136,33 +137,160 @@ router.get('/admin/ll-availability', async (_req, res) => {
         res.status(500).json({ error: 'LL availability failed', details: String(err) });
     }
 });
-// Live Wait Times — real-time from ThemeParks.wiki for all parks
+// Live Wait Times — real-time from Disney private API (Clean Room) via Skipper Session
 router.get('/admin/live-wait-times', async (_req, res) => {
     try {
         const results: any[] = [];
         const parks = ['MK', 'EP', 'HS', 'AK', 'DL', 'DCA'];
+        const dateStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); // YYYY-MM-DD
+        
+        // Grab a session to use for auth
+        const session = await sessionManager.getAnyHealthySession();
+        
+        const parkMap: Record<string, { id: string, resort: 'WDW' | 'DLR' }> = {
+            'MK': { id: '80007944', resort: 'WDW' },
+            'EP': { id: '80007838', resort: 'WDW' },
+            'HS': { id: '80007998', resort: 'WDW' },
+            'AK': { id: '80007823', resort: 'WDW' },
+            'DL': { id: '330339', resort: 'DLR' },
+            'DCA': { id: '336894', resort: 'DLR' }
+        };
+
         for (const parkSlug of parks) {
-            const liveData = await themeParksWiki.getLiveData(parkSlug);
-            for (const entity of liveData) {
-                if (entity.entityType !== 'ATTRACTION' && entity.entityType !== 'SHOW') continue;
-                results.push({
-                    id: entity.id,
-                    name: entity.name,
-                    park: parkSlug,
-                    type: entity.entityType === 'SHOW' ? 'Show' : 'Ride',
-                    status: entity.status,
-                    currentWait: entity.queue?.STANDBY?.waitTime ?? null,
-                    llReturnTime: entity.queue?.RETURN_TIME?.returnStart ?? entity.queue?.PAID_RETURN_TIME?.returnStart ?? null,
-                    llType: entity.queue?.PAID_RETURN_TIME ? 'Individual LL' : entity.queue?.RETURN_TIME ? 'Tier 1' : null,
-                    llAvailable: (entity.queue?.RETURN_TIME?.state === 'AVAILABLE') || (entity.queue?.PAID_RETURN_TIME?.state === 'AVAILABLE') || false,
-                    llPrice: entity.queue?.PAID_RETURN_TIME?.price?.formatted ?? null,
-                    vqStatus: entity.queue?.BOARDING_GROUP?.allocationStatus ?? null,
-                });
+            let useFallback = false;
+            let experiences: any[] = [];
+
+            if (session) {
+                try {
+                    const parkConfig = parkMap[parkSlug];
+                    if (parkConfig) {
+                        experiences = await disneyAPIClient.getExperiences(
+                            parkConfig.id,
+                            dateStr,
+                            session.skipperId,
+                            parkConfig.resort
+                        );
+                    } else {
+                        useFallback = true;
+                    }
+                } catch (err) {
+                    console.warn(`[LiveWaitTimes] Disney API failed for ${parkSlug}, falling back to ThemeParksWiki:`, err);
+                    useFallback = true;
+                }
+            } else {
+                useFallback = true;
+            }
+
+            if (useFallback) {
+                const liveData = await themeParksWiki.getLiveData(parkSlug);
+                for (const entity of liveData) {
+                    if (entity.entityType !== 'ATTRACTION' && entity.entityType !== 'SHOW') continue;
+                    
+                    let determinedType = entity.entityType === 'SHOW' ? 'Show' : 'Ride';
+                    const lowerName = entity.name.toLowerCase();
+                    
+                    // Heuristic reclassification...
+                    if (lowerName.includes('meet') || lowerName.includes('greeting') || lowerName.includes('character') || lowerName.includes('fairytale hall') || lowerName.includes('encounter')) {
+                        determinedType = 'Character';
+                    } else if (determinedType === 'Ride' && (lowerName.includes('show') || lowerName.includes('tale') || lowerName.includes('jamboree') || lowerName.includes('theater') || lowerName.includes('theatre') || lowerName.includes('vision') || lowerName.includes('spectacular') || lowerName.includes('fireworks') || lowerName.includes('parade') || lowerName.includes('floor') || lowerName.includes('sing-along') || lowerName.includes('hall of presidents') || lowerName.includes('carousel of progress') || lowerName.includes('tiki room') || lowerName.includes('treehouse') || lowerName.includes('trail') || lowerName.includes('walk') || lowerName.includes('station') || lowerName.includes('express train') || lowerName.includes('affection section') || lowerName.includes('animal care') || lowerName.includes('boneyard') || lowerName.includes('play') || lowerName.includes('explore') || lowerName.includes('exhibit'))) {
+                        determinedType = 'Show';
+                    }
+
+                    results.push({
+                        id: entity.id,
+                        name: entity.name,
+                        park: parkSlug,
+                        type: determinedType,
+                        status: entity.status,
+                        currentWait: entity.queue?.STANDBY?.waitTime ?? null,
+                        llReturnTime: entity.queue?.RETURN_TIME?.returnStart ?? entity.queue?.PAID_RETURN_TIME?.returnStart ?? null,
+                        llType: entity.queue?.PAID_RETURN_TIME ? 'Individual LL' : entity.queue?.RETURN_TIME ? 'Tier 1' : null,
+                        llAvailable: (entity.queue?.RETURN_TIME?.state === 'AVAILABLE') || (entity.queue?.PAID_RETURN_TIME?.state === 'AVAILABLE') || false,
+                        llPrice: entity.queue?.PAID_RETURN_TIME?.price?.formatted ?? null,
+                        vqStatus: entity.queue?.BOARDING_GROUP?.allocationStatus ?? null,
+                    });
+                }
+            } else {
+                // Disney Private API logic
+                for (const entity of experiences) {
+                    if (entity.type !== 'ATTRACTION' && entity.type !== 'ENTERTAINMENT' && entity.type !== 'CHARACTER') continue;
+                    
+                    let determinedType = entity.type === 'ENTERTAINMENT' ? 'Show' : (entity.type === 'CHARACTER' ? 'Character' : 'Ride');
+                    const lowerName = (entity.name || '').toLowerCase();
+                    
+                    if (determinedType === 'Ride' && (lowerName.includes('show') || lowerName.includes('tale') || lowerName.includes('jamboree') || lowerName.includes('theater') || lowerName.includes('theatre') || lowerName.includes('vision') || lowerName.includes('spectacular') || lowerName.includes('fireworks') || lowerName.includes('parade') || lowerName.includes('floor') || lowerName.includes('sing-along') || lowerName.includes('hall of presidents') || lowerName.includes('carousel of progress') || lowerName.includes('tiki room') || lowerName.includes('treehouse') || lowerName.includes('trail') || lowerName.includes('walk') || lowerName.includes('station') || lowerName.includes('express train') || lowerName.includes('affection section') || lowerName.includes('animal care') || lowerName.includes('boneyard') || lowerName.includes('play') || lowerName.includes('explore') || lowerName.includes('exhibit'))) {
+                        determinedType = 'Show';
+                    }
+
+                    results.push({
+                        id: entity.id,
+                        name: entity.name || 'Unknown',
+                        park: parkSlug,
+                        type: determinedType,
+                        status: entity.standby?.unavailableReason ? 'CLOSED' : 'OPERATING',
+                        currentWait: entity.standby?.waitTime ?? null,
+                        llReturnTime: entity.flex?.nextAvailableTime ?? entity.individual?.nextAvailableTime ?? null,
+                        llType: entity.individual ? 'Individual LL' : entity.flex ? 'Tier 1' : null,
+                        llAvailable: entity.flex?.available ?? entity.individual?.available ?? false,
+                        llPrice: entity.individual?.displayPrice ?? null,
+                        vqStatus: entity.virtualQueue?.available ? 'AVAILABLE' : null,
+                    });
+                }
             }
         }
         res.json(results);
     } catch (err) {
         res.status(500).json({ error: 'Live wait times failed', details: String(err) });
+    }
+});
+
+// Webhook: Disney OTP Interceptor (Resend Inbound)
+// Receives the raw email intercepted by Resend, parses the 6-digit OTP code, and stores it
+router.post('/webhooks/resend-inbound', async (req, res) => {
+    try {
+        const { type, data } = req.body;
+        
+        // Ensure this is an email payload
+        if (type !== 'email.received' || !data) {
+            return res.status(400).json({ error: 'Unrecognized payload' });
+        }
+
+        const toField = data.to;
+        // Handle array or string for Recipient
+        const recipientEmail = Array.isArray(toField) ? toField[0] : toField;
+        const bodyText = data.text || data.html || '';
+
+        // Extract 6-digit code via RegEx
+        const codeMatch = bodyText.match(/\b\d{6}\b/);
+        
+        if (!recipientEmail || !codeMatch) {
+            return res.status(400).json({ error: 'Missing email recipient or unable to find 6-digit code' });
+        }
+
+        const code = codeMatch[0];
+        
+        // Clean up email formatting (e.g. "Name <email@domain.com>" -> "email@domain.com")
+        const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi;
+        const cleanEmailMatch = recipientEmail.match(emailRegex);
+        const cleanEmail = cleanEmailMatch ? cleanEmailMatch[0].toLowerCase() : recipientEmail.toLowerCase();
+
+        const db = getSupabaseClient();
+        const { error } = await db.from('verification_codes').insert({
+            email: cleanEmail,
+            code: code,
+            received_at: new Date().toISOString()
+        });
+
+        if (error) {
+            console.error('[Resend Webhook] Failed to insert OTP code:', error);
+            return res.status(500).json({ error: 'Database insert failed' });
+        }
+
+        console.log(`[Resend Webhook] OTP ${code} intercepted for ${cleanEmail}`);
+        res.status(200).json({ success: true });
+    } catch (err) {
+        console.error('[Resend Webhook] Error processing incoming email:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 

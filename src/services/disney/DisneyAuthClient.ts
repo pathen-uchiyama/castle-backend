@@ -141,17 +141,15 @@ export class DisneyAuthClient {
     // b) Send an OTP email and return a session ID — common
     // c) Return a CAPTCHA challenge — we can't automate this
 
-    // For now, we assume OTP is always required (safest assumption)
-    return {
-      type: 'OTP_REQUIRED',
-      sessionId: `login-session-${Date.now()}`,
-    };
-
-    // When real endpoint is captured via mitmproxy, this becomes:
-    /*
-    const response = await fetch('https://registerdisney.go.com/jgc/v6/client/EPA-CORE-WDW-LSINT/guest/login', {
+    console.log(`[DisneyAuth] POSTing to Disney v8 login pipeline for ${email}`);
+    
+    // Captured via browser proxy
+    const response = await fetch('https://registerdisney.go.com/jgc/v8/client/TPR-WDW-LBJS.WEB-PROD/guest/login?langPref=en-US&feature=no-password-reuse', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
+      },
       body: JSON.stringify({
         loginValue: email,
         password: password,
@@ -160,22 +158,26 @@ export class DisneyAuthClient {
 
     const data = await response.json();
 
-    if (data.access_token) {
+    if (data.data?.token?.access_token || data.access_token) {
+      const swid = data.data?.profile?.swid || data.swid;
+      const accessToken = data.data?.token?.access_token || data.access_token;
+      const expiresIn = data.data?.token?.expires_in || data.expires_in || 3600;
+      
       return {
         type: 'AUTHENTICATED',
         auth: {
-          swid: data.swid,
-          accessToken: data.access_token,
-          tokenExpires: new Date(data.expires_in * 1000 + Date.now()),
+          swid: swid,
+          accessToken: accessToken,
+          tokenExpires: new Date(expiresIn * 1000 + Date.now()),
         },
       };
     }
 
+    // OTP Challenge received
     return {
       type: 'OTP_REQUIRED',
-      sessionId: data.loginSessionId,
+      sessionId: data.data?.loginSessionId || data.loginSessionId,
     };
-    */
   }
 
   /**
@@ -224,11 +226,12 @@ export class DisneyAuthClient {
   ): Promise<DisneyAuthData> {
     console.log(`[DisneyAuth] Completing auth with OTP code ${otpCode} (session: ${sessionId})`);
 
-    // When real endpoint is captured via mitmproxy, this becomes:
-    /*
-    const response = await fetch('https://registerdisney.go.com/jgc/v6/client/EPA-CORE-WDW-LSINT/guest/login/otp', {
+    const response = await fetch('https://registerdisney.go.com/jgc/v8/client/TPR-WDW-LBJS.WEB-PROD/guest/login/otp/verify?langPref=en-US', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
+      },
       body: JSON.stringify({
         loginSessionId: sessionId,
         otpCode: otpCode,
@@ -236,19 +239,19 @@ export class DisneyAuthClient {
     });
 
     const data = await response.json();
-    return {
-      swid: data.swid,
-      accessToken: data.access_token,
-      tokenExpires: new Date(data.expires_in * 1000 + Date.now()),
-    };
-    */
+    
+    const swid = data.data?.profile?.swid || data.swid;
+    const accessToken = data.data?.token?.access_token || data.access_token;
+    const expiresIn = data.data?.token?.expires_in || data.expires_in || 3600;
 
-    // MVP placeholder: return mock auth data
-    // In production, the above fetch replaces this
+    if (!swid || !accessToken) {
+      throw new Error(`[DisneyAuth] OTP Verification failed: ${JSON.stringify(data)}`);
+    }
+
     return {
-      swid: `{SWID-${Date.now()}}`,
-      accessToken: `mock-access-token-${Date.now()}`,
-      tokenExpires: new Date(Date.now() + 12 * 60 * 60 * 1000), // 12 hours
+      swid: swid,
+      accessToken: accessToken,
+      tokenExpires: new Date(expiresIn * 1000 + Date.now()),
     };
   }
 
