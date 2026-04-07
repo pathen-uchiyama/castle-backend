@@ -418,28 +418,38 @@ export class DayRecalibrationEngine {
                 count = globalConcentration.get(ride.attractionId)!;
             }
 
-            // Total users must be at least 1, but practically during load testing it will be ~200
-            const concentrationPercent = count / Math.max(totalActiveUsers, 1);
+            // A flash mob requires at least MAX_SAME_RIDE_PER_WINDOW users to be physically problematic
+            if (count <= DayRecalibrationEngine.MAX_SAME_RIDE_PER_WINDOW) {
+                continue;
+            }
+
+            // Total users must be at least 100 to prevent early users from seeing 100% concentrations
+            const concentrationPercent = count / Math.max(totalActiveUsers, 100);
 
             if (concentrationPercent > DayRecalibrationEngine.FLASH_MOB_THRESHOLD) {
-                warnings.push({
-                    attractionId: ride.attractionId,
-                    attractionName: ride.attractionName,
-                    windowStart: new Date().toISOString(),
-                    concentrationPercent: Math.round(concentrationPercent * 100),
-                    recommendation: `Redistribute: ${count}/${totalActiveUsers} users (${Math.round(concentrationPercent * 100)}%) targeting ${ride.attractionName}. Staggering or dropping.`,
-                });
-
                 // --- ACTIVE REDISTRIBUTION (SHEDDING) ---
-                // Heavily penalize the score so this ride drops out of the top itineraries
-                // A 1000 point penalty ensures it falls to the absolute bottom of the list
+                // Heavily penalize the score so this ride drops down the priority list
                 ride.score -= 1000;
                 
-                // For severe swarms (>25%), probabalistically drop the ride entirely from recommendations
-                if (concentrationPercent > 0.25) {
-                    if (Math.random() < 0.7) { // 70% chance to drop
-                       ride.score = -9999; // Essentially dropped
+                // For severe swarms (>20%), probabalistically drop the ride entirely from recommendations
+                let dropped = false;
+                if (concentrationPercent > 0.20) {
+                    if (Math.random() < 0.75) { // 75% chance to drop completely for this specific user
+                       ride.score = -9999;
+                       dropped = true;
                     }
+                }
+
+                // If we DID NOT drop the ride (they slipped through the probability gate)
+                // THEN we issue a warning, because they are actively contributing to the bottleneck.
+                if (!dropped) {
+                    warnings.push({
+                        attractionId: ride.attractionId,
+                        attractionName: ride.attractionName,
+                        windowStart: new Date().toISOString(),
+                        concentrationPercent: Math.round(concentrationPercent * 100),
+                        recommendation: `Redistribute: ${count}/${Math.max(totalActiveUsers, 100)} users (${Math.round(concentrationPercent * 100)}%) targeting ${ride.attractionName}. Staggering priority.`,
+                    });
                 }
             }
         }

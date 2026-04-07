@@ -11,18 +11,10 @@ provider "aws" {
   region = var.aws_region
 }
 
-# 1. Security Group
-resource "aws_security_group" "castle_sg" {
-  name        = "${var.project_name}-sg-${var.environment}"
-  description = "Security group for Castle Backend"
-
-  # SSH
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Recommendation: Restrict to User IP later
-  }
+# 1. Security Group for ALB
+resource "aws_security_group" "alb_sg" {
+  name        = "${var.project_name}-alb-sg-${var.environment}"
+  description = "Security group for Castle Application Load Balancer"
 
   # HTTP
   ingress {
@@ -40,12 +32,37 @@ resource "aws_security_group" "castle_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Node backend API
-  ingress {
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-alb-sg"
+  }
+}
+
+# 2. Security Group for EC2 ASG Instances
+resource "aws_security_group" "castle_sg" {
+  name        = "${var.project_name}-sg-${var.environment}"
+  description = "Security group for Castle Backend"
+
+  # SSH
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Restrict to office VPN later
+  }
+
+  # Node backend API ONLY from ALB
+  ingress {
+    from_port       = 3000
+    to_port         = 3000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
   }
 
   # Outbound all
@@ -84,41 +101,13 @@ resource "aws_iam_role_policy_attachment" "secrets_access" {
   policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite" # Recommendation: Scope to specific secret later
 }
 
+resource "aws_iam_role_policy_attachment" "ssm_core_access" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "${var.project_name}-instance-profile-${var.environment}"
   role = aws_iam_role.ec2_role.name
 }
 
-# 3. EC2 Instance
-resource "aws_instance" "castle_server" {
-  ami           = "ami-0fc6cf99992956a4a" # Latest Amazon Linux 2023 in us-east-1
-  instance_type = var.instance_type
-  key_name      = var.key_name
-
-  vpc_security_group_ids = [aws_security_group.castle_sg.id]
-  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
-
-  root_block_device {
-    volume_size = 30 # Increased to 30GB to meet AMI requirements
-    volume_type = "gp3"
-  }
-
-  tags = {
-    Name = "${var.project_name}-server"
-  }
-}
-
-# 4. Elastic IP
-resource "aws_eip" "castle_eip" {
-  instance = aws_instance.castle_server.id
-  domain   = "vpc"
-}
-
-# Outputs
-output "public_ip" {
-  value = aws_eip.castle_eip.public_ip
-}
-
-output "instance_id" {
-  value = aws_instance.castle_server.id
-}

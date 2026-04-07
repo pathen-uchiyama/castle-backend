@@ -40,13 +40,13 @@ resource "aws_launch_template" "castle_lt" {
     yum install -y amazon-cloudwatch-agent
     /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
       -a fetch-config -m ec2 -s \
-      -c ssm:AmazonCloudWatch-castle-backend
+      -c ssm:AmazonCloudWatch-castle-backend || echo "CloudWatch config missing. Skipping."
 
     # Clone and start the backend
     cd /opt
     git clone https://github.com/pathen-uchiyama/castle-backend.git
     cd castle-backend
-    npm ci --production
+    npm ci
     npm run build
 
     # Load secrets from AWS Secrets Manager
@@ -107,7 +107,8 @@ resource "aws_autoscaling_group" "castle_asg" {
   min_size            = var.asg_min_size
   max_size            = var.asg_max_size
   desired_capacity    = var.asg_desired_capacity
-  availability_zones  = ["${var.aws_region}a", "${var.aws_region}b"]
+  vpc_zone_identifier = data.aws_subnets.default.ids
+  target_group_arns   = [aws_lb_target_group.castle_tg.arn]
 
   launch_template {
     id      = aws_launch_template.castle_lt.id
