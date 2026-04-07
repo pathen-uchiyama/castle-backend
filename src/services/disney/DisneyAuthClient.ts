@@ -1,79 +1,46 @@
 import { getSupabaseClient } from '../../config/supabase';
 import { DisneyAuthData } from './types';
 import { SessionManager } from './SessionManager';
+import puppeteer from 'puppeteer-extra';
+// @ts-ignore
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+
+puppeteer.use(StealthPlugin());
 
 /**
- * DisneyAuthClient — Programmatic Disney login automation.
+ * DisneyAuthClient — Programmatic Disney login automation via Stealth Headless Browser.
  *
- * Handles the full authentication flow:
- * 1. POST login with email/password → receive auth challenge or OTP prompt
- * 2. Disney sends OTP email to Skipper address
- * 3. Cloudflare Email Worker intercepts → extracts 6-digit code → POSTs to /api/verify-account
- * 4. Code stored in verification_codes table
- * 5. This client polls verification_codes, completes auth → receives SWID + access token
- * 6. Token stored via SessionManager
- *
- * NOTE: The actual Disney auth endpoint URLs may need to be discovered via
- * MITM proxy (mitmproxy) against the MDE app. The structure below is based on
- * standard OAuth2 + email-OTP patterns observed in Disney's auth system.
+ * Handles the full authentication flow bypassing WAF:
+ * 1. Launches Chromium with stealth
+ * 2. Navigates to Disney Login
+ * 3. Enters credentials, intercepts token natively OR handles OTP challenge via DOM
+ * 4. Consumes OTP from database, submits OTP, and captures tokens.
  */
 export class DisneyAuthClient {
   private sessionManager: SessionManager;
   private static readonly OTP_POLL_INTERVAL_MS = 2000;
-  private static readonly OTP_POLL_TIMEOUT_MS = 120_000; // 2 minutes max wait
+  private static readonly OTP_POLL_TIMEOUT_MS = 600_000; // 10 minutes max wait
 
   constructor(sessionManager: SessionManager) {
     this.sessionManager = sessionManager;
   }
 
-  /**
-   * Authenticate a Skipper account with Disney.
-   * Full flow: login → OTP → complete auth → store session.
-   */
   async authenticate(skipperId: string): Promise<DisneyAuthData> {
-    // Get Skipper credentials from Supabase
     const credentials = await this.getSkipperCredentials(skipperId);
     if (!credentials) {
       throw new AuthError(`No credentials found for Skipper ${skipperId}`, 'NO_CREDENTIALS');
     }
 
-    console.log(`[DisneyAuth] Starting auth for Skipper ${skipperId} (${credentials.email})`);
+    console.log(`[DisneyAuth] Starting stealth auth flow for Skipper ${skipperId} (${credentials.email})`);
 
     try {
-      // Step 1: Initiate Disney login
-      const loginResult = await this.initiateLogin(credentials.email, credentials.password);
+      const authData = await this.executeBrowserAuthFlow(credentials.email, credentials.password);
+      
+      // Store the session
+      await this.sessionManager.storeSession(skipperId, authData);
 
-      if (loginResult.type === 'OTP_REQUIRED') {
-        console.log(`[DisneyAuth] OTP required for ${credentials.email} — waiting for Cloudflare worker`);
-
-        // Step 2: Wait for OTP from Cloudflare Email Worker
-        const otpCode = await this.waitForOTP(credentials.email);
-        if (!otpCode) {
-          throw new AuthError('OTP not received within timeout', 'OTP_TIMEOUT');
-        }
-
-        // Step 3: Complete auth with OTP
-        const authData = await this.completeAuthWithOTP(loginResult.sessionId, otpCode);
-
-        // Step 4: Store the session
-        await this.sessionManager.storeSession(skipperId, authData);
-
-        // Step 5: Mark OTP as used
-        await this.markOTPUsed(credentials.email, otpCode);
-
-        console.log(`[DisneyAuth] ✅ Skipper ${skipperId} authenticated (SWID: ${authData.swid})`);
-        return authData;
-
-      } else if (loginResult.type === 'AUTHENTICATED') {
-        // Direct auth (no OTP needed — rare but possible)
-        await this.sessionManager.storeSession(skipperId, loginResult.auth);
-        console.log(`[DisneyAuth] ✅ Skipper ${skipperId} authenticated directly`);
-        return loginResult.auth;
-
-      } else {
-        throw new AuthError(`Unexpected login result: ${loginResult.type}`, 'UNEXPECTED_RESULT');
-      }
-
+      console.log(`[DisneyAuth] ✅ Skipper ${skipperId} authenticated (SWID: ${authData.swid})`);
+      return authData;
     } catch (error) {
       if (error instanceof AuthError) throw error;
       console.error(`[DisneyAuth] Auth failed for Skipper ${skipperId}:`, error);
@@ -84,107 +51,193 @@ export class DisneyAuthClient {
     }
   }
 
-  /**
-   * Refresh an existing session that's about to expire.
-   */
   async refreshSession(skipperId: string): Promise<DisneyAuthData | null> {
     const existingSession = await this.sessionManager.getSession(skipperId);
+    if (!existingSession) return this.authenticate(skipperId);
 
-    if (!existingSession) {
-      // No existing session — must do full auth
-      return this.authenticate(skipperId);
-    }
-
-    // Check if token is actually expiring soon (within 1 hour)
     const oneHourFromNow = new Date(Date.now() + 60 * 60 * 1000);
-    if (existingSession.tokenExpires > oneHourFromNow) {
-      // Still fresh — no refresh needed
-      return null;
-    }
+    if (existingSession.tokenExpires > oneHourFromNow) return null;
 
     console.log(`[DisneyAuth] Refreshing session for Skipper ${skipperId}`);
-
-    // For now, do a full re-auth (Disney doesn't expose a clean refresh token flow)
-    // In the future, if we discover a refresh endpoint, we can optimize here
     return this.authenticate(skipperId);
   }
 
-  /**
-   * Get all Skippers that need session refresh.
-   */
   async getSkippersNeedingRefresh(withinMinutes: number = 60): Promise<string[]> {
     return this.sessionManager.getExpiringSessions(withinMinutes);
   }
 
-  // ── Disney Login Flow ──────────────────────────────────────
+  private async executeBrowserAuthFlow(email: string, password: string): Promise<DisneyAuthData> {
+    return new Promise(async (resolve, reject) => {
+      console.log(`[DisneyAuth] Launching stealth browser...`);
+      const browser = await puppeteer.launch({ 
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] 
+      });
 
-  /**
-   * Step 1: Initiate login with Disney.
-   *
-   * TODO: The actual Disney auth endpoints need to be captured via
-   * mitmproxy against the MDE app. The structure below is the expected
-   * pattern based on standard OAuth2 + OTP flows.
-   */
-  private async initiateLogin(
-    email: string,
-    password: string
-  ): Promise<LoginResult> {
-    // Disney auth is typically at:
-    // POST https://registerdisney.go.com/jgc/v6/client/EPA-CORE-WDW-LSINT/guest/login
-    // or similar endpoint that changes with app versions
+      try {
+        const page = await browser.newPage();
+        await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36');
 
-    // For MVP: simulate the flow. In production, replace with actual Disney auth endpoint.
-    console.log(`[DisneyAuth] Initiating login for ${email}`);
+        let caughtToken: string | null = null;
+        let caughtSwid: string | null = null;
+        let caughtExpiresIn = 3600;
 
-    // The login endpoint will either:
-    // a) Return tokens directly (if no 2FA) — rare
-    // b) Send an OTP email and return a session ID — common
-    // c) Return a CAPTCHA challenge — we can't automate this
+        page.on('response', async (res) => {
+          if (res.url().includes('/guest/login') && res.request().method() === 'POST') {
+            try {
+              const json = await res.json();
+              if (json.data?.token?.access_token || json.access_token) {
+                caughtToken = json.data?.token?.access_token || json.access_token;
+                caughtSwid = json.data?.profile?.swid || json.swid;
+                caughtExpiresIn = json.data?.token?.expires_in || json.expires_in || 3600;
+              }
+            } catch (e) {
+              // Ignore
+            }
+          }
+        });
 
-    console.log(`[DisneyAuth] POSTing to Disney v8 login pipeline for ${email}`);
-    
-    // Captured via browser proxy
-    const response = await fetch('https://registerdisney.go.com/jgc/v8/client/TPR-WDW-LBJS.WEB-PROD/guest/login?langPref=en-US&feature=no-password-reuse', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
-      },
-      body: JSON.stringify({
-        loginValue: email,
-        password: password,
-      }),
+        console.log(`[DisneyAuth] Navigating to Disney login...`);
+        await page.goto('https://disneyworld.disney.go.com/login/', { waitUntil: 'networkidle2' });
+
+        await new Promise(r => setTimeout(r, 3000));
+        let frames = page.frames();
+        let loginFrame = frames.find(f => f.url().includes('login') || f.url().includes('register')) || page.mainFrame();
+
+        console.log(`[DisneyAuth] Filling credentials for ${email}...`);
+        
+        await page.screenshot({ path: '/tmp/disney_login_before_email.png' });
+        
+        // Sometimes the UI uses slightly different inputs. We'll wait universally.
+        await loginFrame.waitForSelector('input', { timeout: 15000 });
+        
+        const emailSelectors = ['input[type="email"]', 'input[name="email"]', 'input[id^="InputIdentity"]', 'input[type="text"]'];
+        let emailTyped = false;
+        for (const sel of emailSelectors) {
+             if (await loginFrame.$(sel)) {
+                 await loginFrame.type(sel, email, { delay: 50 });
+                 emailTyped = true;
+                 break;
+             }
+        }
+        
+        if (!emailTyped) throw new Error('Could not find email input element');
+        
+        await page.keyboard.press('Enter');
+        await new Promise(r => setTimeout(r, 3000));
+
+        await new Promise(r => setTimeout(r, 3000));
+        
+        // Re-find frame just in case it reloaded
+        frames = page.frames();
+        loginFrame = frames.find(f => f.url().includes('login') || f.url().includes('register')) || page.mainFrame();
+        
+        await loginFrame.waitForSelector('input[type="password"]', { timeout: 15000 }).catch(() => {});
+        
+        const pwdSelectors = ['input[type="password"]', 'input[name="password"]', 'input[id^="InputPassword"]'];
+        let pwdTyped = false;
+        for (const sel of pwdSelectors) {
+             if (await loginFrame.$(sel)) {
+                 await loginFrame.type(sel, password, { delay: 50 });
+                 pwdTyped = true;
+                 break;
+             }
+        }
+        
+        if (!pwdTyped) {
+             console.log('[DisneyAuth] Could not find password element. Bypassing to OTP/Token challenge phase...');
+        } else {
+             console.log(`[DisneyAuth] Submitting password...`);
+             await page.keyboard.press('Enter');
+             await new Promise(r => setTimeout(r, 4000));
+        }
+
+        console.log(`[DisneyAuth] Waiting for intercept or OTP challenge...`);
+        // We wait up to 10 seconds for the OTP screen or token interception
+        for (let i = 0; i < 10; i++) {
+          if (caughtToken && caughtSwid) {
+            console.log(`[DisneyAuth] ✅ Token intercepted successfully!`);
+            await browser.close();
+            return resolve({
+              swid: caughtSwid,
+              accessToken: caughtToken,
+              tokenExpires: new Date(caughtExpiresIn * 1000 + Date.now()),
+            });
+          }
+          await new Promise(r => setTimeout(r, 1000));
+        }
+
+        // If we reach here, we likely hit the OTP Challenge screen.
+        const content = await page.content();
+        if (content.includes('Passcode') || content.includes('code') || content.includes('OTP')) {
+          console.log(`[DisneyAuth] ⚠️ Disney asked for a passcode (OTP required). Taking screenshot to check if Send button needs to be clicked...`);
+          await page.screenshot({ path: '/tmp/AwaitingOTP.png' });
+          console.log(`[DisneyAuth] Waiting for webhook loop...`);
+
+          // Trigger "Send Passcode" button if it exists
+          await page.keyboard.press('Enter');
+          await new Promise(r => setTimeout(r, 4000));
+
+          // Re-find frame
+          frames = page.frames();
+          loginFrame = frames.find(f => f.url().includes('login') || f.url().includes('register')) || page.mainFrame();
+          
+          // Wait for email
+          const otpCode = await this.waitForOTP(email);
+          if (!otpCode) {
+            throw new AuthError('OTP not received within timeout', 'OTP_TIMEOUT');
+          }
+
+          console.log(`[DisneyAuth] Inputting OTP ${otpCode} into browser...`);
+          
+          const inputSelectors = ['input[name="passcode"]', 'input[type="text"]', 'input[type="tel"]'];
+          let foundInput = false;
+          for (const sel of inputSelectors) {
+            if (await loginFrame.$(sel)) {
+              await loginFrame.type(sel, otpCode, { delay: 50 });
+              foundInput = true;
+              break;
+            }
+          }
+
+          if (!foundInput) {
+             throw new Error('Could not find OTP input field on the page');
+          }
+          
+          await new Promise(r => setTimeout(r, 500));
+          await page.keyboard.press('Enter');
+          await new Promise(r => setTimeout(r, 3000));
+
+          // Wait to intercept final tokens
+          for (let i = 0; i < 15; i++) {
+            if (caughtToken && caughtSwid) {
+              console.log(`[DisneyAuth] ✅ Token intercepted successfully after OTP!`);
+              await this.markOTPUsed(email, otpCode);
+              await browser.close();
+              return resolve({
+                swid: caughtSwid,
+                accessToken: caughtToken,
+                tokenExpires: new Date(caughtExpiresIn * 1000 + Date.now()),
+              });
+            }
+            await new Promise(r => setTimeout(r, 1000));
+          }
+
+          throw new AuthError('Token not intercepted after OTP submission', 'UNEXPECTED_RESULT');
+
+        } else {
+             console.error(`[DisneyAuth] Failed to intercept token and OTP challenge not detected.`);
+             throw new AuthError('Unknown UI state encountered - check browser logs', 'UNEXPECTED_RESULT');
+        }
+
+      } catch (err) {
+        reject(err);
+      } finally {
+        if (browser) await browser.close();
+      }
     });
-
-    const data = await response.json();
-
-    if (data.data?.token?.access_token || data.access_token) {
-      const swid = data.data?.profile?.swid || data.swid;
-      const accessToken = data.data?.token?.access_token || data.access_token;
-      const expiresIn = data.data?.token?.expires_in || data.expires_in || 3600;
-      
-      return {
-        type: 'AUTHENTICATED',
-        auth: {
-          swid: swid,
-          accessToken: accessToken,
-          tokenExpires: new Date(expiresIn * 1000 + Date.now()),
-        },
-      };
-    }
-
-    // OTP Challenge received
-    return {
-      type: 'OTP_REQUIRED',
-      sessionId: data.data?.loginSessionId || data.loginSessionId,
-    };
   }
 
-  /**
-   * Step 2: Wait for OTP code to appear in verification_codes table.
-   * The Cloudflare Email Worker intercepts Disney's OTP email and
-   * POSTs the 6-digit code to /api/verify-account, which stores it here.
-   */
   private async waitForOTP(email: string): Promise<string | null> {
     const startTime = Date.now();
     const db = getSupabaseClient();
@@ -201,63 +254,15 @@ export class DisneyAuthClient {
         .single();
 
       if (data?.code) {
-        console.log(`[DisneyAuth] OTP received for ${email}`);
+        console.log(`[DisneyAuth] OTP extracted from database for ${email}`);
         return data.code;
       }
-
-      // Wait before next poll
-      await new Promise(resolve =>
-        setTimeout(resolve, DisneyAuthClient.OTP_POLL_INTERVAL_MS)
-      );
+      await new Promise(resolve => setTimeout(resolve, DisneyAuthClient.OTP_POLL_INTERVAL_MS));
     }
-
     console.error(`[DisneyAuth] OTP timeout for ${email} after ${DisneyAuthClient.OTP_POLL_TIMEOUT_MS}ms`);
     return null;
   }
 
-  /**
-   * Step 3: Complete auth by submitting OTP code to Disney.
-   *
-   * TODO: Replace with actual Disney OTP verification endpoint.
-   */
-  private async completeAuthWithOTP(
-    sessionId: string,
-    otpCode: string
-  ): Promise<DisneyAuthData> {
-    console.log(`[DisneyAuth] Completing auth with OTP code ${otpCode} (session: ${sessionId})`);
-
-    const response = await fetch('https://registerdisney.go.com/jgc/v8/client/TPR-WDW-LBJS.WEB-PROD/guest/login/otp/verify?langPref=en-US', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
-      },
-      body: JSON.stringify({
-        loginSessionId: sessionId,
-        otpCode: otpCode,
-      }),
-    });
-
-    const data = await response.json();
-    
-    const swid = data.data?.profile?.swid || data.swid;
-    const accessToken = data.data?.token?.access_token || data.access_token;
-    const expiresIn = data.data?.token?.expires_in || data.expires_in || 3600;
-
-    if (!swid || !accessToken) {
-      throw new Error(`[DisneyAuth] OTP Verification failed: ${JSON.stringify(data)}`);
-    }
-
-    return {
-      swid: swid,
-      accessToken: accessToken,
-      tokenExpires: new Date(expiresIn * 1000 + Date.now()),
-    };
-  }
-
-  /**
-   * Mark an OTP as used so it can't be replayed.
-   */
   private async markOTPUsed(email: string, code: string): Promise<void> {
     try {
       const db = getSupabaseClient();
@@ -266,17 +271,10 @@ export class DisneyAuthClient {
         .update({ used: true, used_at: new Date().toISOString() })
         .eq('email', email)
         .eq('code', code);
-    } catch (err) {
-      console.warn(`[DisneyAuth] Failed to mark OTP as used:`, err);
-    }
+    } catch (err) { }
   }
 
-  /**
-   * Get stored credentials for a Skipper account.
-   */
-  private async getSkipperCredentials(
-    skipperId: string
-  ): Promise<{ email: string; password: string } | null> {
+  private async getSkipperCredentials(skipperId: string): Promise<{ email: string; password: string } | null> {
     try {
       const db = getSupabaseClient();
       const { data } = await db
@@ -284,44 +282,19 @@ export class DisneyAuthClient {
         .select('email') // Bypass broken encrypted_password column
         .eq('id', skipperId)
         .single();
-
       if (!data) return null;
-
-      return {
-        email: data.email,
-        // MVP: Universal password for all current Skipper profiles
-        password: 'CastleMagic!2026', 
-      };
+      return { email: data.email, password: 'CastleMagic!2026' };
     } catch (err) {
-      console.error(`[DisneyAuth] Failed to get credentials for ${skipperId}:`, err);
       return null;
     }
   }
 
-  /**
-   * Decrypt a stored password.
-   * TODO: Implement proper AES-256 decryption using a KMS key.
-   */
   private decryptPassword(encrypted: string): string {
-    // In production: use AWS KMS, GCP KMS, or Node.js crypto with a proper key
-    // For MVP: passwords are stored in base64 (not secure — replace before production)
     return Buffer.from(encrypted, 'base64').toString('utf-8');
   }
 }
 
-// ── Types ────────────────────────────────────────────────────────────
-
-type LoginResult =
-  | { type: 'OTP_REQUIRED'; sessionId: string }
-  | { type: 'AUTHENTICATED'; auth: DisneyAuthData }
-  | { type: 'CAPTCHA_REQUIRED' }; // Can't automate — needs manual intervention
-
-export type AuthErrorCode =
-  | 'NO_CREDENTIALS'
-  | 'OTP_TIMEOUT'
-  | 'UNEXPECTED_RESULT'
-  | 'AUTH_FAILED'
-  | 'CAPTCHA_BLOCKED';
+export type AuthErrorCode = 'NO_CREDENTIALS' | 'OTP_TIMEOUT' | 'UNEXPECTED_RESULT' | 'AUTH_FAILED' | 'CAPTCHA_BLOCKED';
 
 export class AuthError extends Error {
   code: AuthErrorCode;
