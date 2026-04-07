@@ -744,6 +744,9 @@ router.post('/trips/:tripId/recalibrate', async (req, res) => {
             advisories = ALL_ADVISORIES.filter((a: { parkId: string }) => a.parkId === parkId);
         }
 
+        // Track global demand via Redis
+        const globalMetrics = await debouncer.recordDemand(parkId as any, scoredRides || []);
+
         // Run recalibration engine
         const { DayRecalibrationEngine } = await import('../services/DayRecalibrationEngine');
         const result = DayRecalibrationEngine.calibrate({
@@ -754,7 +757,8 @@ router.post('/trips/:tripId/recalibrate', async (req, res) => {
             scoredRides: scoredRides || [],
             existingItinerary: existingItinerary || [],
             activeSnipeCount: 0,
-            totalActiveUsers: 1,
+            totalActiveUsers: globalMetrics.totalActiveUsers,
+            globalConcentration: globalMetrics.globalConcentration,
         });
 
         const response = {

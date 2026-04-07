@@ -86,6 +86,51 @@ export class RecalibrationDebounce {
         const resultKey = `${RecalibrationDebounce.RESULT_PREFIX}${tripId}`;
         await this.redis.set(resultKey, JSON.stringify(result), 'EX', RecalibrationDebounce.DEBOUNCE_TTL);
     }
+
+    /**
+     * Track global demand for rides in 1-minute expiration buckets.
+     * Returns the total active users querying in this current bucket.
+     */
+    async recordDemand(parkId: string, rides: any[]): Promise<{ totalActiveUsers: number, globalConcentration: Map<string, number> }> {
+        if (!this.redis) return { totalActiveUsers: 1, globalConcentration: new Map() };
+
+        // We use a 1-minute bucket based on the current minute
+        const bucketId = Math.floor(Date.now() / 60000);
+        const baseKey = `recal:demand:${parkId}:${bucketId}`;
+
+        const multi = this.redis.multi();
+        multi.incr(`${baseKey}:total`);
+        multi.expire(`${baseKey}:total`, 120);
+
+        // Track how many users are asking for each specific ride
+        for (const r of rides) {
+            if (r && r.attractionId) {
+                // We add the user's snipe count (usually 1 or more) to the global counter
+                multi.incrby(`${baseKey}:ride:${r.attractionId}`, r.snipeJobCount || 1);
+                multi.expire(`${baseKey}:ride:${r.attractionId}`, 120);
+            }
+        }
+
+        const results = await multi.exec();
+        if (!results) return { totalActiveUsers: 1, globalConcentration: new Map() };
+
+        const totalActiveUsers = (results[0][1] as number) || 1;
+        
+        // Fetch current global tally for the rides that were just queried
+        // We know that `results` contains the increments in order.
+        // Index 0, 1 = total. Index 2, 3 = first ride... etc.
+        const globalConcentration = new Map<string, number>();
+        let resultIdx = 2; // Start after 'total'
+        for (const r of rides) {
+            if (r && r.attractionId) {
+                const currentTally = (results[resultIdx][1] as number) || 1;
+                globalConcentration.set(r.attractionId, currentTally);
+                resultIdx += 2;
+            }
+        }
+
+        return { totalActiveUsers, globalConcentration };
+    }
 }
 
 /**
@@ -115,6 +160,7 @@ export interface CalibrationInput {
     existingItinerary: ItineraryStep[];
     activeSnipeCount: number;
     totalActiveUsers: number;
+    globalConcentration?: Map<string, number>;
     strategyType?: 'A' | 'B';
 }
 
@@ -183,11 +229,12 @@ export class DayRecalibrationEngine {
             input.guests
         );
 
-        // Layer 2: Flash Mob Detection
+        // Layer 2: Flash Mob Detection & Ride Shedding
         const flashMobWarnings = this.detectFlashMobRisk(
             eligible,
             input.activeSnipeCount,
-            input.totalActiveUsers
+            input.totalActiveUsers,
+            input.globalConcentration
         );
 
         // Layer 3: Time Slot Diversification
@@ -350,36 +397,57 @@ export class DayRecalibrationEngine {
     // ── Layer 2: Flash Mob Detection ────────────────────────────
 
     /**
-     * Detect if too many users are targeting the same ride in the same window.
-     * If >15% of active users target the same ride, redistribute.
+     * Detect if too many users are targeting the same ride globally.
+     * If >15% of active users target the same ride, redistribute them
+     * by heavily penalizing the scores of swarmed rides!
      */
     static detectFlashMobRisk(
         eligibleRides: ScoredRide[],
         activeSnipeCount: number,
-        totalActiveUsers: number
+        totalActiveUsers: number,
+        globalConcentration?: Map<string, number>
     ): FlashMobWarning[] {
         const warnings: FlashMobWarning[] = [];
         if (totalActiveUsers === 0) return warnings;
 
-        // Group by attractionId
-        const rideConcentration = new Map<string, { count: number; name: string }>();
+        // If no global concentration passed, fall back to local count (1 user = 100% false positives without this fix)
+        // With the fix, globalConcentration reliably contains the entire park's load.
         for (const ride of eligibleRides) {
-            const existing = rideConcentration.get(ride.attractionId) || { count: 0, name: ride.attractionName };
-            existing.count += ride.snipeJobCount;
-            rideConcentration.set(ride.attractionId, existing);
-        }
+            let count = ride.snipeJobCount;
+            if (globalConcentration && globalConcentration.has(ride.attractionId)) {
+                count = globalConcentration.get(ride.attractionId)!;
+            }
 
-        for (const [attractionId, data] of rideConcentration) {
-            const concentrationPercent = data.count / Math.max(totalActiveUsers, 1);
+            // Total users must be at least 1, but practically during load testing it will be ~200
+            const concentrationPercent = count / Math.max(totalActiveUsers, 1);
 
             if (concentrationPercent > DayRecalibrationEngine.FLASH_MOB_THRESHOLD) {
                 warnings.push({
-                    attractionId,
-                    attractionName: data.name,
+                    attractionId: ride.attractionId,
+                    attractionName: ride.attractionName,
                     windowStart: new Date().toISOString(),
                     concentrationPercent: Math.round(concentrationPercent * 100),
-                    recommendation: `Redistribute: ${data.count}/${totalActiveUsers} users (${Math.round(concentrationPercent * 100)}%) targeting ${data.name}. Stagger by 3-5 minutes per batch.`,
+                    recommendation: `Redistribute: ${count}/${totalActiveUsers} users (${Math.round(concentrationPercent * 100)}%) targeting ${ride.attractionName}. Staggering or dropping.`,
                 });
+
+                // --- ACTIVE REDISTRIBUTION (SHEDDING) ---
+                // Heavily penalize the score so this ride drops out of the top itineraries
+                // A 1000 point penalty ensures it falls to the absolute bottom of the list
+                ride.score -= 1000;
+                
+                // For severe swarms (>25%), probabalistically drop the ride entirely from recommendations
+                if (concentrationPercent > 0.25) {
+                    if (Math.random() < 0.7) { // 70% chance to drop
+                       ride.score = -9999; // Essentially dropped
+                    }
+                }
+            }
+        }
+        
+        // Remove dropped rides from the eligible array so they aren't scheduled
+        for (let i = eligibleRides.length - 1; i >= 0; i--) {
+            if (eligibleRides[i].score === -9999) {
+                eligibleRides.splice(i, 1);
             }
         }
 
