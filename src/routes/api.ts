@@ -264,6 +264,10 @@ router.post('/webhooks/resend-inbound', async (req, res) => {
         let fetchDebug = 'no_fetch';
         try {
             if (data.email_id && process.env.RESEND_API_KEY) {
+                // RACE CONDITION FIX: Resend fires webhooks milliseconds before their DB finishes saving the massive HTML string.
+                // We MUST wait ~3 seconds so GET /emails/ returns a populated .html field instead of null.
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
                 const response = await fetch(`https://api.resend.com/emails/${data.email_id}`, {
                     headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}` }
                 });
