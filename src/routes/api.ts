@@ -258,7 +258,20 @@ router.post('/webhooks/resend-inbound', async (req, res) => {
         const toField = data.to;
         // Handle array or string for Recipient
         const recipientEmail = Array.isArray(toField) ? toField[0] : toField;
-        const bodyText = (data.subject || '') + ' ' + (data.text || data.html || '');
+        
+        // Resend Inbound Webhooks omit the email body for performance. We must fetch it.
+        let bodyText = data.subject || '';
+        try {
+            if (data.email_id && process.env.RESEND_API_KEY) {
+                const response = await fetch(`https://api.resend.com/emails/${data.email_id}`, {
+                    headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}` }
+                });
+                const emailData = await response.json();
+                bodyText += ' ' + (emailData.text || emailData.html || '');
+            }
+        } catch (e) {
+            console.error("Failed to fetch email body from Resend:", e);
+        }
 
         // Extract 6-digit code via RegEx
         const codeMatch = bodyText.match(/\b\d{6}\b/);
