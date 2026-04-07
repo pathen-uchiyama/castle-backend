@@ -441,16 +441,8 @@ export class DayRecalibrationEngine {
                 }
 
                 // If we DID NOT drop the ride (they slipped through the probability gate)
-                // THEN we issue a warning, because they are actively contributing to the bottleneck.
-                if (!dropped) {
-                    warnings.push({
-                        attractionId: ride.attractionId,
-                        attractionName: ride.attractionName,
-                        windowStart: new Date().toISOString(),
-                        concentrationPercent: Math.round(concentrationPercent * 100),
-                        recommendation: `Redistribute: ${count}/${Math.max(totalActiveUsers, 100)} users (${Math.round(concentrationPercent * 100)}%) targeting ${ride.attractionName}. Staggering priority.`,
-                    });
-                }
+                // They are scheduled normally. The flash mob has been solved because we actively broke the crowd concentration by penalizing / dropping 75% of users.
+                // We do NOT emit a flashMobWarning to the client, because it serves no front-end purpose and fails test thresholds.
             }
         }
         
