@@ -11,7 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Tracks provisioned utility domains (e.g., cc-ops-01.com)
 -- ────────────────────────────────────────────────────────────
 CREATE TABLE utility_domains (
-    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     domain_name     TEXT NOT NULL UNIQUE,
     cloudflare_zone_id TEXT,
     status          TEXT NOT NULL DEFAULT 'PROVISIONING'
@@ -31,7 +31,7 @@ CREATE TABLE utility_domains (
 -- Managed Disney companion accounts in the Skipper Pool
 -- ────────────────────────────────────────────────────────────
 CREATE TABLE skipper_accounts (
-    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email           TEXT NOT NULL UNIQUE,      -- e.g., s102@cc-ops-01.com
     domain_id       UUID REFERENCES utility_domains(id),
     disney_id       TEXT,                      -- Disney account ID once created
@@ -68,7 +68,7 @@ CREATE TABLE skipper_accounts (
 -- Tracks friend connections between Skippers and real users
 -- ────────────────────────────────────────────────────────────
 CREATE TABLE friend_links (
-    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     skipper_id      UUID REFERENCES skipper_accounts(id) ON DELETE CASCADE,
     user_disney_id  TEXT NOT NULL,             -- The real user's Disney ID
     trip_id         TEXT NOT NULL,
@@ -84,7 +84,7 @@ CREATE TABLE friend_links (
 -- Temporary storage for intercepted Disney verification codes
 -- ────────────────────────────────────────────────────────────
 CREATE TABLE verification_codes (
-    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email           TEXT NOT NULL,
     code            TEXT NOT NULL,
     used            BOOLEAN DEFAULT FALSE,

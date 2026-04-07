@@ -258,7 +258,7 @@ router.post('/webhooks/resend-inbound', async (req, res) => {
         const toField = data.to;
         // Handle array or string for Recipient
         const recipientEmail = Array.isArray(toField) ? toField[0] : toField;
-        const bodyText = data.text || data.html || '';
+        const bodyText = (data.subject || '') + ' ' + (data.text || data.html || '');
 
         // Extract 6-digit code via RegEx
         const codeMatch = bodyText.match(/\b\d{6}\b/);

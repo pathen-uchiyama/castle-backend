@@ -8,7 +8,7 @@
 -- Active Disney auth sessions per Skipper account
 -- ────────────────────────────────────────────────────────────
 CREATE TABLE skipper_sessions (
-    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     skipper_id      UUID NOT NULL REFERENCES skipper_accounts(id) ON DELETE CASCADE,
     swid            TEXT NOT NULL,              -- Disney Subscriber-Wide ID
     access_token    TEXT NOT NULL,              -- Bearer token (encrypted at rest by Supabase)
@@ -28,7 +28,7 @@ CREATE INDEX idx_session_expires ON skipper_sessions(token_expires);
 -- Versioned endpoint configuration (Redis is primary, this is backup)
 -- ────────────────────────────────────────────────────────────
 CREATE TABLE disney_endpoint_registry (
-    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     version         TEXT NOT NULL,              -- e.g., '2026.04.05'
     source_commit   TEXT,                       -- BG1 commit hash this was derived from
     endpoints       JSONB NOT NULL,             -- Full endpoint map (ll + vq paths)
@@ -44,7 +44,7 @@ CREATE INDEX idx_registry_active ON disney_endpoint_registry(is_active);
 -- Audit trail of BG1 commit processing
 -- ────────────────────────────────────────────────────────────
 CREATE TABLE bg1_sync_log (
-    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     commit_sha      TEXT NOT NULL UNIQUE,
     commit_message  TEXT,
     files_changed   TEXT[],                     -- Array of changed file paths

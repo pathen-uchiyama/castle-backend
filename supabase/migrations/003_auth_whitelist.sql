@@ -7,7 +7,7 @@
 -- Tracks emails authorized to create accounts
 -- ────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.allowed_registrations (
-    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email       TEXT NOT NULL UNIQUE,
     notes       TEXT,
     created_at  TIMESTAMPTZ DEFAULT NOW(),
