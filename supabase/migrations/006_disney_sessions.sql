@@ -7,7 +7,7 @@
 -- Table: skipper_sessions
 -- Active Disney auth sessions per Skipper account
 -- ────────────────────────────────────────────────────────────
-CREATE TABLE skipper_sessions (
+CREATE TABLE IF NOT EXISTS skipper_sessions (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     skipper_id      UUID NOT NULL REFERENCES skipper_accounts(id) ON DELETE CASCADE,
     swid            TEXT NOT NULL,              -- Disney Subscriber-Wide ID
@@ -20,14 +20,14 @@ CREATE TABLE skipper_sessions (
     UNIQUE(skipper_id)                          -- One active session per Skipper
 );
 
-CREATE INDEX idx_session_skipper ON skipper_sessions(skipper_id);
-CREATE INDEX idx_session_expires ON skipper_sessions(token_expires);
+CREATE INDEX IF NOT EXISTS idx_session_skipper ON skipper_sessions(skipper_id);
+CREATE INDEX IF NOT EXISTS idx_session_expires ON skipper_sessions(token_expires);
 
 -- ────────────────────────────────────────────────────────────
 -- Table: disney_endpoint_registry
 -- Versioned endpoint configuration (Redis is primary, this is backup)
 -- ────────────────────────────────────────────────────────────
-CREATE TABLE disney_endpoint_registry (
+CREATE TABLE IF NOT EXISTS disney_endpoint_registry (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     version         TEXT NOT NULL,              -- e.g., '2026.04.05'
     source_commit   TEXT,                       -- BG1 commit hash this was derived from

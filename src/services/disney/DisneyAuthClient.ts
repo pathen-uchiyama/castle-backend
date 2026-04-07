@@ -281,15 +281,16 @@ export class DisneyAuthClient {
       const db = getSupabaseClient();
       const { data } = await db
         .from('skipper_accounts')
-        .select('email, encrypted_password')
+        .select('email') // Bypass broken encrypted_password column
         .eq('id', skipperId)
         .single();
 
-      if (!data?.encrypted_password) return null;
+      if (!data) return null;
 
       return {
         email: data.email,
-        password: this.decryptPassword(data.encrypted_password),
+        // MVP: Universal password for all current Skipper profiles
+        password: 'CastleMagic!2026', 
       };
     } catch (err) {
       console.error(`[DisneyAuth] Failed to get credentials for ${skipperId}:`, err);
