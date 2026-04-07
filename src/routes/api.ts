@@ -261,6 +261,7 @@ router.post('/webhooks/resend-inbound', async (req, res) => {
         
         // Resend Inbound Webhooks omit the email body for performance. We must fetch it.
         let bodyText = data.subject || '';
+        let fetchDebug = 'no_fetch';
         try {
             if (data.email_id && process.env.RESEND_API_KEY) {
                 const response = await fetch(`https://api.resend.com/emails/${data.email_id}`, {
@@ -268,16 +269,26 @@ router.post('/webhooks/resend-inbound', async (req, res) => {
                 });
                 const emailData = await response.json();
                 bodyText += ' ' + (emailData.text || emailData.html || '');
+                fetchDebug = `fetched_ok_textLen_${emailData.text?.length || 0}_htmlLen_${emailData.html?.length || 0}`;
+            } else {
+                fetchDebug = 'missing_email_id_or_api_key';
             }
         } catch (e) {
             console.error("Failed to fetch email body from Resend:", e);
+            fetchDebug = 'fetch_threw_exception';
         }
 
         // Extract 6-digit code via RegEx
-        const codeMatch = bodyText.match(/\b\d{6}\b/);
+        // Remove \b bounds in case Disney's HTML is strictly bordering the numbers (e.g. >123456<)
+        const codeMatch = bodyText.match(/(?<!\d)\d{6}(?!\d)/);
         
         if (!recipientEmail || !codeMatch) {
-            return res.status(400).json({ error: 'Missing email recipient or unable to find 6-digit code' });
+            return res.status(400).json({ 
+                error: 'Missing email recipient or unable to find 6-digit code', 
+                debug: fetchDebug, 
+                bodyLength: bodyText.length,
+                subject: data.subject
+            });
         }
 
         const code = codeMatch[0];
