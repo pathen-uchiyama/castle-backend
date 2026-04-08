@@ -104,13 +104,15 @@ export class CircuitBreaker {
     if (health.state === CircuitState.HALF_OPEN) {
       // Recovery probe failed — re-open
       updated.state = CircuitState.OPEN;
-      console.error(`[CircuitBreaker] 🚨 ${endpoint} recovery FAILED — circuit re-OPENED`);
-      await this.fireAlert(updated, 'RECOVERY_FAILED');
+      const isDrift = (statusCode === 403 || statusCode === 400);
+      console.error(`[CircuitBreaker] 🚨 ${endpoint} recovery FAILED — circuit re-OPENED${isDrift ? ' (API DRIFT)' : ''}`);
+      await this.fireAlert(updated, isDrift ? 'API_DRIFT' : 'RECOVERY_FAILED');
     } else if (newFailureCount >= this.FAILURE_THRESHOLD) {
       // Threshold reached — trip the circuit
       updated.state = CircuitState.OPEN;
-      console.error(`[CircuitBreaker] 🚨 ${endpoint} TRIPPED after ${newFailureCount} failures`);
-      await this.fireAlert(updated, 'CIRCUIT_TRIPPED');
+      const isDrift = (statusCode === 403 || statusCode === 400);
+      console.error(`[CircuitBreaker] 🚨 ${endpoint} TRIPPED after ${newFailureCount} failures${isDrift ? ' (API DRIFT)' : ''}`);
+      await this.fireAlert(updated, isDrift ? 'API_DRIFT' : 'CIRCUIT_TRIPPED');
     }
 
     await this.setHealth(endpoint, updated);
@@ -201,7 +203,7 @@ export class CircuitBreaker {
 
   private async fireAlert(
     health: EndpointHealth,
-    reason: 'CIRCUIT_TRIPPED' | 'RECOVERY_FAILED'
+    reason: 'CIRCUIT_TRIPPED' | 'RECOVERY_FAILED' | 'API_DRIFT'
   ): Promise<void> {
     const now = Date.now();
     if (now - this.lastAlertTime < this.ALERT_COOLDOWN_MS) return;
@@ -215,7 +217,9 @@ export class CircuitBreaker {
       lastErrorCode: health.lastErrorCode,
       lastErrorBody: health.lastErrorBody,
       timestamp: new Date().toISOString(),
-      action: reason === 'CIRCUIT_TRIPPED'
+      action: reason === 'API_DRIFT'
+        ? 'API Signatures or WAF rules have changed! Initialize MITM Walkthrough in Dashboard immediately.'
+        : reason === 'CIRCUIT_TRIPPED'
         ? 'Disney endpoint failing. Requests paused. Check BG1 commits for API changes.'
         : 'Recovery probe failed. Disney API may have changed. Manual investigation required.',
     };

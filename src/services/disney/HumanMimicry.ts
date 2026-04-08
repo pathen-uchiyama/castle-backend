@@ -17,6 +17,7 @@ import { DisneyAuthHeaders } from './types';
 // Realistic MDE app user agents, rotated per Skipper session
 
 const USER_AGENTS = [
+  'WDW/20260306.2 CFNetwork/3860.500.112 Darwin/25.4.0',
   'Mozilla/5.0 (iPhone; CPU iPhone OS 18_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
   'Mozilla/5.0 (iPhone; CPU iPhone OS 18_3_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
@@ -111,11 +112,14 @@ export class HumanMimicry {
     const fp = this.getFingerprint(skipperId);
 
     return {
-      'Accept': 'application/json',
+      'Accept': '*/*',
       'Accept-Language': fp.acceptLanguage,
       'Authorization': `BEARER ${auth.accessToken}`,
       'x-user-id': auth.swid,
       'User-Agent': fp.userAgent,
+      'X-App-Id': 'WDW-MDX-IOS-8.19',
+      'X-Correlation-Id': Date.now().toString(),
+      'X-Conversation-Id': `mdx-${fp.deviceId.toUpperCase()}`,
       'Content-Type': 'application/json',
     };
   }

@@ -221,6 +221,36 @@ export class HistoricalAnalytics {
   }
 
   /**
+   * Get latest downtime statistics (duration down, historical averages) for an attraction.
+   */
+  async getDowntimeStats(attractionId: string): Promise<DowntimeStats | null> {
+    try {
+      const db = getSupabaseClient();
+      const { data, error } = await db
+        .from('mv_downtime_statistics')
+        .select('*')
+        .eq('attraction_id', attractionId)
+        .single();
+        
+      if (error || !data) return null;
+      
+      const lastOutageAt = new Date(data.last_outage_at);
+      const minutesSinceOffline = Math.round((Date.now() - lastOutageAt.getTime()) / 60000);
+      
+      return {
+        attractionId: data.attraction_id,
+        avgDowntimeMinutes: data.avg_downtime_minutes,
+        totalOutages: data.total_outages,
+        lastOutageAt: data.last_outage_at,
+        currentDownTimer: minutesSinceOffline
+      };
+    } catch (err) {
+      console.error('[HistoricalAnalytics] Downtime stats query failed:', err);
+      return null;
+    }
+  }
+
+  /**
    * Get the top-N attractions with the highest wait time variance.
    * These are rides where timing matters most — LL priority targets.
    */
@@ -433,4 +463,12 @@ export interface VarianceInfo {
   stdDev: number;
   minAvg: number;
   maxAvg: number;
+}
+
+export interface DowntimeStats {
+  attractionId: string;
+  avgDowntimeMinutes: number;
+  totalOutages: number;
+  lastOutageAt: string;
+  currentDownTimer: number;
 }

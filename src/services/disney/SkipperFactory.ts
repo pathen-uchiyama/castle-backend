@@ -5,6 +5,7 @@ import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import crypto from 'crypto';
 import { createCursor } from 'ghost-cursor';
+import { env } from '../../config/env';
 
 puppeteer.use(StealthPlugin());
 
@@ -84,8 +85,33 @@ export class SkipperFactory {
         succeeded.push(account.email);
         console.log(`[SkipperFactory] ✅ ${account.email} registered successfully.`);
       } catch (err) {
-        console.error(`[SkipperFactory] ❌ Failed to register ${account.email}:`, err instanceof Error ? err.message : err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error(`[SkipperFactory] ❌ Failed to register ${account.email}:`, errorMsg);
         failed.push(account.email);
+        
+        // Detect Structural Drift in Disney's DOM
+        if (
+            errorMsg.includes('waiting for selector') || 
+            errorMsg.includes('not found') || 
+            errorMsg.includes('iframe not found') ||
+            errorMsg.includes('Could not find')
+        ) {
+            console.error(`[SkipperFactory] 🚨 REGISTRATION_DRIFT DETECTED: Disney registration DOM may have changed! (${errorMsg})`);
+            const webhookUrl = (env as Record<string, unknown>).ALERT_WEBHOOK_URL as string | undefined;
+            if (webhookUrl) {
+                fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        severity: 'CRITICAL',
+                        reason: 'REGISTRATION_DRIFT',
+                        endpoint: 'disneyworld.disney.go.com/registration',
+                        timestamp: new Date().toISOString(),
+                        action: 'Registration DOM selectors failed. Disney likely changed the flow. Initialize MITM Walkthrough in Dashboard.'
+                    })
+                }).catch(e => console.error('[SkipperFactory] Drift webhook failed', e));
+            }
+        }
       }
 
       // Stagger registrations (skip delay for last account)
