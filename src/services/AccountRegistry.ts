@@ -229,15 +229,9 @@ export class AccountRegistry {
             .insert({
                 email,
                 code,
+                received_at: new Date().toISOString(),
                 expires_at: new Date(Date.now() + 15 * 60000).toISOString()
             });
-
-        // Also update the Skipper status
-        await this.db
-            .from('skipper_accounts')
-            .update({ status: 'VERIFIED', verified_at: new Date().toISOString() })
-            .eq('email', email)
-            .eq('status', 'VERIFICATION_SENT');
 
         console.log(`[AccountRegistry] Verification code stored for ${email}`);
     }
