@@ -1,0 +1,20 @@
+{
+  "name": "cloudflare-email",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260405.1",
+    "wrangler": "^4.81.0"
+  },
+  "dependencies": {
+    "postal-mime": "^2.7.4"
+  }
+}

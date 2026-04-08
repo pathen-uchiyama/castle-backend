@@ -3,6 +3,7 @@ import { AgentController } from '../controllers/AgentController';
 import { PaymentController } from '../controllers/PaymentController';
 import { ParkController } from '../controllers/ParkController';
 import { TelemetryController } from '../controllers/TelemetryController';
+import { FleetController } from '../controllers/FleetController';
 import {
     healthProbe, bg1Sync, circuitBreaker, historicalAnalytics, themeParksWiki,
     disneyAPIClient, sessionManager
@@ -45,6 +46,17 @@ router.post('/skipper/allocate', AgentController.allocateSkipper);       // Allo
 router.post('/skipper/:id/retire', AgentController.retireSkipper);       // Retire after trip ends
 router.get('/skipper/pool-stats', AgentController.getPoolStats);         // Pool analytics
 router.post('/admin/provision-domain', AgentController.provisionDomain); // Provision new domain + skippers
+
+// ── Fleet Operations: Dashboard Action Buttons ───────────────────────
+router.post('/admin/fleet/provision', FleetController.provision);              // [Provision New Skippers]
+router.post('/admin/fleet/load-shed', FleetController.loadShed);              // [Execute Load Shedding]
+router.post('/admin/fleet/rotate-proxies', FleetController.rotateProxies);    // [Rotate Proxies & Burn]
+router.post('/admin/fleet/deploy-reserves', FleetController.deployReserves);  // [Deploy Warm Reserves]
+router.post('/admin/fleet/replace-banned', FleetController.replaceBanned);    // [Force Replace]
+router.get('/admin/fleet/health', FleetController.getHealth);                 // Fleet Health Panel
+router.get('/admin/fleet/incubation-status', FleetController.getIncubationStatus); // Incubation Pipeline
+router.post('/admin/fleet/run-pulse', FleetController.runPulse);              // Manual incubation pulse
+router.post('/admin/fleet/test-otp', FleetController.testOTP);                // Test OTP injection
 
 // Monetization & Billing
 router.post('/payment/checkout', PaymentController.createCheckout);

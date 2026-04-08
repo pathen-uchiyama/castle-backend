@@ -28,4 +28,6 @@ export { ThemeParksWikiClient } from './ThemeParksWikiClient';
 export type { ShowtimeInfo, LLReturnTimeInfo, VQStatusInfo } from './ThemeParksWikiClient';
 export { HistoricalAnalytics } from './HistoricalAnalytics';
 export type { CrowdLevel, VarianceInfo, LLAvailabilityRecord } from './HistoricalAnalytics';
+export { SkipperFactory } from './SkipperFactory';
+export { IncubationPulse } from './IncubationPulse';
 export * from './types';

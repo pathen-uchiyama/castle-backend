@@ -13,6 +13,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 // ── Types ────────────────────────────────────────────────────────────
 
 export type SkipperStatus =
+    | 'UNREGISTERED'
+    | 'INCUBATING'
     | 'AVAILABLE'
     | 'PENDING'
     | 'VERIFICATION_SENT'
@@ -44,6 +46,11 @@ export interface SkipperAccount {
     verified_at?: string;
     linked_at?: string;
     retired_at?: string;
+    incubation_started_at?: string;
+    incubation_actions?: number;
+    disney_password_hash?: string;
+    ban_detected_at?: string;
+    replaced_by?: string;
     created_at: string;
     updated_at: string;
 }
@@ -67,6 +74,8 @@ export interface SubPoolStats {
     total: number;
     available: number;
     active: number;
+    incubating: number;
+    unregistered: number;
     pending: number;
     banned: number;
     friendCapUtilization: number; // 0–1
@@ -348,7 +357,7 @@ export class AccountRegistry {
             email: `s${String(i + 1).padStart(3, '0')}@${domainName}`,
             domain_id: domainId,
             display_name: `Castle Guest ${Math.floor(1000 + Math.random() * 9000)}`,
-            status: 'AVAILABLE' as SkipperStatus,
+            status: 'UNREGISTERED' as SkipperStatus,
             resort_capability: resort
         }));
 
@@ -370,6 +379,146 @@ export class AccountRegistry {
 
         console.log(`[AccountRegistry] Provisioned ${data.length} Skippers on ${domainName}`);
         return data.length;
+    }
+
+    // ── Incubation Lifecycle ─────────────────────────────────────────
+
+    /**
+     * Gets all accounts currently in INCUBATING state with their progress.
+     */
+    async getIncubatingAccounts(): Promise<{ id: string; email: string; started: string; actions: number; hoursElapsed: number }[]> {
+        const { data } = await this.db
+            .from('skipper_accounts')
+            .select('id, email, incubation_started_at, incubation_actions')
+            .eq('status', 'INCUBATING');
+
+        return (data || []).map((a: any) => {
+            const started = a.incubation_started_at || new Date().toISOString();
+            const hoursElapsed = (Date.now() - new Date(started).getTime()) / (1000 * 60 * 60);
+            return { id: a.id, email: a.email, started, actions: a.incubation_actions || 0, hoursElapsed };
+        });
+    }
+
+    /**
+     * Promotes an INCUBATING account to AVAILABLE after warmup completes.
+     */
+    async promoteToAvailable(skipperId: string): Promise<void> {
+        await this.db
+            .from('skipper_accounts')
+            .update({ status: 'AVAILABLE' })
+            .eq('id', skipperId)
+            .eq('status', 'INCUBATING');
+        console.log(`[AccountRegistry] Skipper ${skipperId} → AVAILABLE (incubation complete)`);
+    }
+
+    /**
+     * Records an incubation warming action for an account.
+     */
+    async recordIncubationAction(skipperId: string): Promise<void> {
+        // Increment the action counter via raw update
+        const { data } = await this.db
+            .from('skipper_accounts')
+            .select('incubation_actions')
+            .eq('id', skipperId)
+            .single();
+        
+        const current = data?.incubation_actions || 0;
+        await this.db
+            .from('skipper_accounts')
+            .update({ 
+                incubation_actions: current + 1,
+                last_activity_at: new Date().toISOString()
+            })
+            .eq('id', skipperId);
+    }
+
+    /**
+     * Gets UNREGISTERED accounts ready for factory registration.
+     */
+    async getUnregisteredAccounts(limit: number = 5): Promise<SkipperAccount[]> {
+        const { data } = await this.db
+            .from('skipper_accounts')
+            .select('*')
+            .eq('status', 'UNREGISTERED')
+            .order('created_at', { ascending: true })
+            .limit(limit);
+        return (data || []) as SkipperAccount[];
+    }
+
+    /**
+     * Moves an account from UNREGISTERED to INCUBATING after Disney registration.
+     */
+    async startIncubation(skipperId: string, disneyPasswordHash: string): Promise<void> {
+        await this.db
+            .from('skipper_accounts')
+            .update({
+                status: 'INCUBATING',
+                incubation_started_at: new Date().toISOString(),
+                disney_password_hash: disneyPasswordHash
+            })
+            .eq('id', skipperId)
+            .eq('status', 'UNREGISTERED');
+        console.log(`[AccountRegistry] Skipper ${skipperId} → INCUBATING (registration complete)`);
+    }
+
+    /**
+     * Records a ban detection and finds a replacement from the warm pool.
+     */
+    async handleBan(skipperId: string): Promise<SkipperAccount | null> {
+        // Read the trip assignment BEFORE clearing it (avoid race condition)
+        const { data: banned } = await this.db
+            .from('skipper_accounts')
+            .select('assigned_trip_id, assigned_user_id, resort_capability')
+            .eq('id', skipperId)
+            .single();
+
+        // Mark the account as banned and clear assignments
+        await this.db
+            .from('skipper_accounts')
+            .update({
+                status: 'BANNED',
+                ban_detected_at: new Date().toISOString(),
+                assigned_trip_id: null,
+                assigned_user_id: null
+            })
+            .eq('id', skipperId);
+        console.warn(`[AccountRegistry] ⚠️ Skipper ${skipperId} → BANNED`);
+
+        if (banned?.assigned_trip_id) {
+            // Auto-allocate a replacement
+            const replacement = await this.allocateSkipper(
+                banned.assigned_trip_id, 
+                banned.assigned_user_id, 
+                banned.resort_capability === 'DLR' ? 'DLR' : 'WDW'
+            );
+            if (replacement) {
+                await this.db
+                    .from('skipper_accounts')
+                    .update({ replaced_by: replacement.id })
+                    .eq('id', skipperId);
+                console.log(`[AccountRegistry] Replacement allocated: ${replacement.email}`);
+            }
+            return replacement;
+        }
+        return null;
+    }
+
+    /**
+     * Gets recent bans grouped by domain for compromise detection.
+     */
+    async getRecentBansByDomain(withinMinutes: number = 10): Promise<Record<string, number>> {
+        const cutoff = new Date(Date.now() - withinMinutes * 60 * 1000).toISOString();
+        const { data } = await this.db
+            .from('skipper_accounts')
+            .select('domain_id')
+            .eq('status', 'BANNED')
+            .gte('ban_detected_at', cutoff);
+
+        const counts: Record<string, number> = {};
+        (data || []).forEach((a: any) => {
+            counts[a.domain_id] = (counts[a.domain_id] || 0) + 1;
+        });
+        return counts;
     }
 
     // ── Pool Analytics ───────────────────────────────────────────────
@@ -398,6 +547,8 @@ export class AccountRegistry {
                 total: subset.length,
                 available: subset.filter((a: any) => a.status === 'AVAILABLE').length,
                 active: subset.filter((a: any) => a.status === 'ACTIVE').length,
+                incubating: subset.filter((a: any) => a.status === 'INCUBATING').length,
+                unregistered: subset.filter((a: any) => a.status === 'UNREGISTERED').length,
                 pending: subset.filter((a: any) => ['PENDING', 'VERIFICATION_SENT', 'VERIFIED', 'LINKING'].includes(a.status)).length,
                 banned: subset.filter((a: any) => a.status === 'BANNED').length,
                 friendCapUtilization: totalFriendCap > 0 ? totalFriends / totalFriendCap : 0,

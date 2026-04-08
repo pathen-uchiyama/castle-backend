@@ -1,0 +1,14 @@
+name = "castle-otp-receiver"
+main = "src/index.ts"
+compatibility_date = "2024-03-20"
+
+# This URL MUST point to your actual EC2 backend or load balancer routing to Castle Companion
+[vars]
+CASTLE_API_URL = "https://castle-backend-production.up.railway.app/api"
+
+# To deploy this, run: npx wrangler deploy
+# After deploying, you must log into the Cloudflare Dashboard:
+# For EACH of your 6 domains:
+# 1. Go to Email -> Email Routing -> Routes
+# 2. Set up a Catch-all address action
+# 3. Choose "Send to a Worker" and select "castle-otp-receiver"
