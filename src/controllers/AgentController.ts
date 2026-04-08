@@ -293,6 +293,19 @@ export class AgentController {
     }
 
     /**
+     * Returns all skipper accounts for the admin dashboard.
+     * GET /skippers
+     */
+    static async getAllSkippers(_req: Request, res: Response) {
+        try {
+            const skippers = await accountRegistry.getAllSkippers();
+            res.status(200).json(skippers);
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to fetch skippers' });
+        }
+    }
+
+    /**
      * Provisions a new utility domain and a batch of Skipper accounts.
      * POST /admin/provision-domain
      */

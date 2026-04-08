@@ -139,6 +139,7 @@ router.post('/verify-account', AgentController.verifyAccount);           // Clou
 router.post('/skipper/allocate', AgentController.allocateSkipper);       // Allocate a Skipper for a trip
 router.post('/skipper/:id/retire', AgentController.retireSkipper);       // Retire after trip ends
 router.get('/skipper/pool-stats', AgentController.getPoolStats);         // Pool analytics
+router.get('/skippers', AgentController.getAllSkippers);                 // Complete Skipper list
 router.post('/admin/provision-domain', AgentController.provisionDomain); // Provision new domain + skippers
 
 // ── Fleet Operations: Dashboard Action Buttons ───────────────────────

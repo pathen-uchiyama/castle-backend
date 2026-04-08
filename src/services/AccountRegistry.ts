@@ -613,4 +613,21 @@ export class AccountRegistry {
         if (stats.total === 0) return true;
         return (stats.available / stats.total) < 0.2;
     }
+
+    /**
+     * Gets all skipper accounts for the admin dashboard.
+     */
+    async getAllSkippers(): Promise<SkipperAccount[]> {
+        const { data, error } = await this.db
+            .from('skipper_accounts')
+            .select('*')
+            .order('created_at', { ascending: false });
+            
+        if (error) {
+            console.error(`[AccountRegistry] Failed to fetch all skippers:`, error.message);
+            return [];
+        }
+        
+        return (data || []) as SkipperAccount[];
+    }
 }
