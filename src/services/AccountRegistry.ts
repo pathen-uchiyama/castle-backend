@@ -328,6 +328,17 @@ export class AccountRegistry {
     }
 
     /**
+     * Gets all ACTIVE domains
+     */
+    async getActiveDomains(): Promise<UtilityDomain[]> {
+        const { data } = await this.db
+            .from('utility_domains')
+            .select('*')
+            .eq('status', 'ACTIVE');
+        return (data || []) as UtilityDomain[];
+    }
+
+    /**
      * Marks a domain as fully provisioned (DNS + Worker deployed).
      */
     async activateDomain(domainId: string): Promise<void> {
@@ -437,6 +448,37 @@ export class AccountRegistry {
             .order('created_at', { ascending: true })
             .limit(limit);
         return (data || []) as SkipperAccount[];
+    }
+
+    /**
+     * Seeds new UNREGISTERED accounts under a specific domain.
+     */
+    async seedAccounts(count: number, domainId: string, domainName: string): Promise<void> {
+        const firstNames = ['sarah', 'michael', 'jessica', 'ryan', 'emily', 'chris', 'amanda', 'david', 'lauren', 'brian', 'katie', 'josh', 'ashley'];
+        const lastNames = ['parks', 'jenkins', 'thompson', 'davis', 'miller', 'wilson', 'moore', 'taylor', 'anderson', 'thomas', 'jackson'];
+        
+        const inserts = [];
+        for (let i = 0; i < count; i++) {
+            const f = firstNames[Math.floor(Math.random() * firstNames.length)];
+            const l = lastNames[Math.floor(Math.random() * lastNames.length)];
+            const suffix = Math.floor(Math.random() * 90) + 10;
+            const email = `${f}${l}${suffix}@${domainName}`;
+            
+            inserts.push({
+                email,
+                domain_id: domainId,
+                status: 'UNREGISTERED',
+                resort_capability: 'UNIVERSAL',
+                display_name: `${f.charAt(0).toUpperCase() + f.slice(1)} ${l.charAt(0).toUpperCase() + l.slice(1)}`
+            });
+        }
+
+        const { error } = await this.db.from('skipper_accounts').insert(inserts);
+        if (error) {
+            console.error(`[AccountRegistry] Failed to seed accounts: ${error.message}`);
+        } else {
+            console.log(`[AccountRegistry] Successfully seeded ${count} UNREGISTERED accounts under ${domainName}`);
+        }
     }
 
     /**

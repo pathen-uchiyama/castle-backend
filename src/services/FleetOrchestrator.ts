@@ -209,6 +209,56 @@ export class FleetOrchestrator {
   }
 
   /**
+   * Automatically replaces banned accounts and provisions new ones to hit a target buffer.
+   * Concurrency is strictly limited to prevent server crashing via Puppeteer.
+   */
+  async autoReplenishFleet(targetBuffer: number = 10, batchLimit: number = 3): Promise<{ seeded: number, provisioned: number }> {
+    if (this.loadSheddingActive) {
+      console.log('[FleetOrchestrator] Load shedding active, skipping auto-replenishment.');
+      return { seeded: 0, provisioned: 0 };
+    }
+
+    const stats = await this.registry.getPoolStats();
+    
+    // We count ANY account that is theoretically viable toward the buffer
+    const warmableCount = stats.available + stats.active + stats.incubating + stats.unregistered;
+    const deficit = targetBuffer - warmableCount;
+
+    let seededCount = 0;
+
+    if (deficit > 0) {
+      // Need more accounts seeded first
+      const activeDomains = await this.registry.getActiveDomains();
+      if (activeDomains.length === 0) {
+        this.emitAlert('POOL_CRITICAL', 'critical', 'Cannot replenish fleet: No ACTIVE domains available for seeding.');
+        return { seeded: 0, provisioned: 0 };
+      }
+
+      // Spread evenly or pick a random domain
+      const randomDomain = activeDomains[Math.floor(Math.random() * activeDomains.length)];
+      
+      const seedCount = Math.min(deficit, 10); // Don't seed 1,000 at once if target is huge
+      await this.registry.seedAccounts(seedCount, randomDomain.id, randomDomain.domain_name);
+      seededCount = seedCount;
+    }
+
+    // Now check if we have any UNREGISTERED accounts to provision via Puppeteer.
+    const unregistered = await this.registry.getUnregisteredAccounts(batchLimit);
+    
+    if (unregistered.length > 0) {
+      this.emitAlert('FACTORY_TRIGGERED', 'info', `Auto-replenishing ${unregistered.length} accounts to maintain buffer.`);
+      const result = await this.factory.provisionBatch(unregistered.length);
+      
+      if (result.failed.length > 0) {
+        this.emitAlert('BAN_DETECTED', 'warning', `Replenish factory failed for ${result.failed.length} accounts.`);
+      }
+      return { seeded: seededCount, provisioned: result.succeeded.length };
+    }
+
+    return { seeded: seededCount, provisioned: 0 };
+  }
+
+  /**
    * Check if load shedding is active (used by QueueManager to skip low-priority jobs).
    */
   isLoadSheddingActive(): boolean {

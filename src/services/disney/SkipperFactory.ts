@@ -4,6 +4,7 @@ import puppeteer from 'puppeteer-extra';
 // @ts-ignore
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import crypto from 'crypto';
+import { createCursor } from 'ghost-cursor';
 
 puppeteer.use(StealthPlugin());
 
@@ -109,16 +110,35 @@ export class SkipperFactory {
     const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
     const identity = this.generateIdentity();
 
+    const args = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'];
+    
+    // 1. Add residential proxy configuration
+    if (process.env.PROXY_SERVER) {
+      args.push(`--proxy-server=http://${process.env.PROXY_SERVER}`);
+    }
+
     const browser = await puppeteer.launch({
       headless: true,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined, // Railway Docker: /usr/bin/chromium
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+      args
     });
 
     try {
       const page = await browser.newPage();
+
+      // Authenticate with the proxy if credentials are provided
+      if (process.env.PROXY_USERNAME && process.env.PROXY_PASSWORD) {
+        await page.authenticate({
+          username: process.env.PROXY_USERNAME,
+          password: process.env.PROXY_PASSWORD
+        });
+      }
+
       await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36');
       await page.setViewport({ width: 1280, height: 800 });
+      
+      // 2. Initialize ghost-cursor for human-like mouse trajectories
+      const cursor = createCursor(page);
 
       // ────────────────────────────────────────────────────────────────
       // STEP 1: Navigate and find the registration iframe
@@ -148,6 +168,12 @@ export class SkipperFactory {
       await regFrame.waitForSelector('#InputIdentityFlowValue', { timeout: 10000 });
       console.log(`[SkipperFactory] Email field found. Entering ${account.email}...`);
 
+      // 3. Emulate human interaction: Read and scroll slightly
+      await page.mouse.wheel({ deltaY: Math.random() * 200 + 100 });
+      await new Promise(r => setTimeout(r, 1000 + Math.random() * 1000));
+      await cursor.moveTo({ x: Math.random() * 500, y: Math.random() * 500 });
+      await new Promise(r => setTimeout(r, 500 + Math.random() * 500));
+
       await regFrame.type('#InputIdentityFlowValue', account.email, { delay: 50 + Math.random() * 40 });
       await new Promise(r => setTimeout(r, 800 + Math.random() * 500));
 
@@ -168,6 +194,11 @@ export class SkipperFactory {
       await regFrame.waitForSelector('#InputFirstName', { timeout: 15000 });
       console.log(`[SkipperFactory] Registration form loaded. Filling fields...`);
 
+      // Idle scrolling before starting the form
+      await page.mouse.wheel({ deltaY: Math.random() * 300 + 150 });
+      await new Promise(r => setTimeout(r, 1500 + Math.random() * 1000));
+      await cursor.moveTo({ x: Math.random() * 600, y: Math.random() * 600 });
+      
       // First Name
       await regFrame.type('#InputFirstName', identity.firstName, { delay: 45 + Math.random() * 25 });
       await new Promise(r => setTimeout(r, 400 + Math.random() * 400));
@@ -201,6 +232,9 @@ export class SkipperFactory {
       if (tosCheckbox) {
         const isChecked = await tosCheckbox.evaluate((el: any) => el.checked);
         if (!isChecked) {
+          // Pre-checkbox erratic motion mimicking a human finding the box
+          await cursor.moveTo({ x: Math.random() * 800, y: Math.random() * 600 });
+          await new Promise(r => setTimeout(r, 300 + Math.random() * 400));
           await tosCheckbox.click();
           console.log(`[SkipperFactory] Checked TOS checkbox.`);
         }

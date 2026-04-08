@@ -12,6 +12,7 @@ import { WaitMagicEngine, WaitAlert } from "../agents/WaitMagicEngine";
 import { FirebaseGuardian } from "../utils/FirebaseGuardian";
 import { MARCH_2026_CLOSURES } from "../data/march2026Closures";
 import { BotManager } from "../services/BotManager";
+import { FleetOrchestrator } from "../services/FleetOrchestrator";
 
 // ── Disney API Integration ───────────────────────────────────────────
 import {
@@ -74,6 +75,7 @@ const diningSniper = new DiningSniper(agentQueue);
 const vqSniper = new VirtualQueueSniper(agentQueue);
 const waitMagic = new WaitMagicEngine(agentQueue);
 const telemetryCollector = new TelemetryCollector();
+const fleetOrchestrator = new FleetOrchestrator();
 
 // ── Disney Module Initialization ─────────────────────────────────────
 const endpointRegistry = new EndpointRegistry();
@@ -279,6 +281,13 @@ const scoutWorker = new Worker(
                 break;
             }
 
+            case 'auto-replenish-fleet': {
+                console.log('[FleetOrchestrator] Running scheduled Auto-Replenish check...');
+                // Target buffer 15, max 3 built at once per cycle
+                await fleetOrchestrator.autoReplenishFleet(15, 3);
+                break;
+            }
+
             case 'poll-themeparks-wiki': {
                 const { parkSlug } = job.data;
 
@@ -405,6 +414,13 @@ scoutWorker.on("failed", (job, err) => {
             jobId: 'cleanup-historical-data'
         });
         console.log('🧹 Historical Data Cleanup registered (weekly Sunday 2 AM)');
+
+        // Fleet Auto-Replenisher — every 15 minutes
+        await agentQueue.add('auto-replenish-fleet', {}, {
+            repeat: { every: 15 * 60 * 1000 },
+            jobId: 'auto-replenish-fleet'
+        });
+        console.log('🛠️  Fleet Auto-Replenisher registered (every 15 min)');
 
         // Seed endpoint registry on startup
         await endpointRegistry.seedIfEmpty();
