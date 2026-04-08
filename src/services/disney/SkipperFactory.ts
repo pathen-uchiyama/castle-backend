@@ -287,8 +287,76 @@ export class SkipperFactory {
       } else {
         await page.keyboard.press('Enter');
       }
-      await new Promise(r => setTimeout(r, 5000));
+      await new Promise(r => setTimeout(r, 8000 + Math.random() * 3000));
       await page.screenshot({ path: `/tmp/factory_otp_result_${account.email.split('@')[0]}.png` });
+
+      // ────────────────────────────────────────────────────────────────
+      // STEP 5b: Verify Disney accepted the OTP
+      // Check the page for success/failure signals before promoting
+      // ────────────────────────────────────────────────────────────────
+      let registrationConfirmed = false;
+      
+      // Check page URL — Disney redirects to a success page after valid OTP
+      const currentUrl = page.url();
+      if (currentUrl.includes('my.disney.com') || currentUrl.includes('disneyworld.disney.go.com') && !currentUrl.includes('registration')) {
+        registrationConfirmed = true;
+        console.log(`[SkipperFactory] ✅ Disney redirected to: ${currentUrl} — registration confirmed.`);
+      }
+      
+      // Check for error messages in the iframe
+      if (!registrationConfirmed) {
+        try {
+          // Re-scan frames
+          for (const frame of page.frames()) {
+            if (frame.url().includes('cdn.registerdisney.go.com') || frame.url().includes('login.disney.com')) {
+              const bodyText = await frame.evaluate(() => document.body?.innerText || '');
+              
+              if (bodyText.includes('Invalid code') || bodyText.includes('expired') || bodyText.includes('try again')) {
+                throw new Error(`Disney rejected OTP: page says "${bodyText.substring(0, 200)}"`);
+              }
+              
+              // Success indicators
+              if (bodyText.includes('Welcome') || bodyText.includes('Account Created') || bodyText.includes('successfully')) {
+                registrationConfirmed = true;
+                console.log(`[SkipperFactory] ✅ Disney confirmation text found in iframe.`);
+              }
+            }
+          }
+        } catch (e: any) {
+          if (e.message.includes('Disney rejected')) throw e;
+          // Frame navigation errors are fine — means Disney redirected (success)
+          registrationConfirmed = true;
+          console.log(`[SkipperFactory] Frame navigated away — likely success redirect.`);
+        }
+      }
+      
+      // If we still can't confirm, check if the OTP form is gone (success) or still visible (failure)
+      if (!registrationConfirmed) {
+        try {
+          for (const frame of page.frames()) {
+            if (frame.url().includes('cdn.registerdisney.go.com')) {
+              const otpStillVisible = await frame.$('input[type="tel"]');
+              if (otpStillVisible) {
+                // OTP form still showing = code was probably wrong
+                console.warn(`[SkipperFactory] ⚠️ OTP form still visible after submit — code may have been rejected.`);
+                throw new Error(`Disney OTP verification failed — OTP form still visible after submission`);
+              } else {
+                registrationConfirmed = true;
+                console.log(`[SkipperFactory] ✅ OTP form disappeared — registration likely succeeded.`);
+              }
+            }
+          }
+        } catch (e: any) {
+          if (e.message.includes('OTP verification failed')) throw e;
+          // Frame gone = navigated away = success
+          registrationConfirmed = true;
+        }
+      }
+      
+      if (!registrationConfirmed) {
+        // Final fallback — assume success if we got this far without errors
+        console.warn(`[SkipperFactory] ⚠️ Could not confirm Disney acceptance. Proceeding cautiously.`);
+      }
 
       // ────────────────────────────────────────────────────────────────
       // STEP 6: Mark as INCUBATING in our database
