@@ -95,6 +95,19 @@ export class FleetController {
     }
 
     /**
+     * Force run the auto replenisher loop once immediately.
+     */
+    static async forceReplenish(_req: Request, res: Response) {
+        try {
+            console.log('[FleetController] User triggered forceful auto-replenish pipeline');
+            const result = await orchestrator.autoReplenishFleet();
+            res.status(200).json({ success: true, message: 'Auto-replenisher triggered', ...result });
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to replenish fleet', details: String(error) });
+        }
+    }
+
+    /**
      * Comprehensive fleet health for the dashboard.
      * GET /admin/fleet/health
      */

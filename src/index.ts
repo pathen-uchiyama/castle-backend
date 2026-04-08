@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import { env } from './config/env';
 import { metricsMiddleware } from './services/MetricsEmitter';
+import { logger } from './utils/Logger';
+
+logger.init();
 
 const app = express();
 

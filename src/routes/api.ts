@@ -62,6 +62,15 @@ router.post('/admin/fleet/test-otp', FleetController.testOTP);                //
 router.post('/payment/checkout', PaymentController.createCheckout);
 router.post('/payment/portal', PaymentController.createPortal);
 
+// ── Admin: Logs & Triggers ────────────────────────────
+import { logger } from '../utils/Logger';
+
+router.get('/admin/logs', (_req, res) => {
+    res.json(logger.getLogs());
+});
+
+router.post('/admin/force-replenish', FleetController.forceReplenish);
+
 // ── Disney API Integration: Admin Endpoints ──────────────────────────
 
 // Health Dashboard — aggregated Disney API + ThemeParks.wiki health
