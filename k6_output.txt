@@ -1,0 +1,767 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: load-tests/07_mass_recalibration.js
+        output: -
+
+     scenarios: (100.00%) 2 scenarios, 90 max VUs, 2m30s max duration (incl. graceful stop):
+              * mass_recal: 200 iterations shared among 50 VUs (maxDuration: 2m0s, gracefulStop: 30s)
+              * split_party_recal: 80 iterations shared among 40 VUs (maxDuration: 1m30s, exec: splitPartyRecalibration, startTime: 30s, gracefulStop: 30s)
+
+
+running (0m01.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m01.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  29.0s        
+
+running (0m02.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m02.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  28.0s        
+
+running (0m03.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m03.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  27.0s        
+
+running (0m04.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m04.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  26.0s        
+
+running (0m05.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m05.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  25.0s        
+
+running (0m06.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m06.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  24.0s        
+
+running (0m07.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m07.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  23.0s        
+
+running (0m08.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m08.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  22.0s        
+
+running (0m09.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m09.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  21.0s        
+
+running (0m10.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m10.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  20.0s        
+
+running (0m11.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m11.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  19.0s        
+
+running (0m12.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m12.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  18.0s        
+
+running (0m13.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m13.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  17.0s        
+
+running (0m14.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m14.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  16.0s        
+
+running (0m15.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m15.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  15.0s        
+
+running (0m16.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m16.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  14.0s        
+
+running (0m17.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m17.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  13.0s        
+
+running (0m18.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m18.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  12.0s        
+
+running (0m19.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m19.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  11.0s        
+
+running (0m20.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m20.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  10.0s        
+
+running (0m21.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m21.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  09.0s        
+
+running (0m22.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m22.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  08.0s        
+
+running (0m23.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m23.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  07.0s        
+
+running (0m24.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m24.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  06.0s        
+
+running (0m25.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m25.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  05.0s        
+
+running (0m26.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m26.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  04.0s        
+
+running (0m27.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m27.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  03.0s        
+
+running (0m28.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m28.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  02.0s        
+
+running (0m29.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m29.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  01.0s        
+
+running (0m30.0s), 50/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs   0m30.0s/2m0s  044/200 shared iters
+split_party_recal • [   0% ] waiting  00.0s        
+
+running (0m31.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m31.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m01.0s/1m30s  00/80 shared iters
+
+running (0m32.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m32.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m02.0s/1m30s  00/80 shared iters
+
+running (0m33.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m33.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m03.0s/1m30s  00/80 shared iters
+
+running (0m34.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m34.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m04.0s/1m30s  00/80 shared iters
+
+running (0m35.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m35.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m05.0s/1m30s  00/80 shared iters
+
+running (0m36.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m36.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m06.0s/1m30s  00/80 shared iters
+
+running (0m37.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m37.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m07.0s/1m30s  00/80 shared iters
+
+running (0m38.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m38.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m08.0s/1m30s  00/80 shared iters
+
+running (0m39.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m39.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m09.0s/1m30s  00/80 shared iters
+
+running (0m40.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m40.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m10.0s/1m30s  00/80 shared iters
+
+running (0m41.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m41.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m11.0s/1m30s  00/80 shared iters
+
+running (0m42.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m42.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m12.0s/1m30s  00/80 shared iters
+
+running (0m43.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m43.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m13.0s/1m30s  00/80 shared iters
+
+running (0m44.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m44.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m14.0s/1m30s  00/80 shared iters
+
+running (0m45.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m45.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m15.0s/1m30s  00/80 shared iters
+
+running (0m46.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m46.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m16.0s/1m30s  00/80 shared iters
+
+running (0m47.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m47.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m17.0s/1m30s  00/80 shared iters
+
+running (0m48.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m48.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m18.0s/1m30s  00/80 shared iters
+
+running (0m49.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m49.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m19.0s/1m30s  00/80 shared iters
+
+running (0m50.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m50.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m20.0s/1m30s  00/80 shared iters
+
+running (0m51.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m51.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m21.0s/1m30s  00/80 shared iters
+
+running (0m52.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m52.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m22.0s/1m30s  00/80 shared iters
+
+running (0m53.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m53.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m23.0s/1m30s  00/80 shared iters
+
+running (0m54.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m54.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m24.0s/1m30s  00/80 shared iters
+
+running (0m55.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m55.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m25.0s/1m30s  00/80 shared iters
+
+running (0m56.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m56.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m26.0s/1m30s  00/80 shared iters
+
+running (0m57.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m57.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m27.0s/1m30s  00/80 shared iters
+
+running (0m58.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m58.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m28.0s/1m30s  00/80 shared iters
+
+running (0m59.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  0m59.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m29.0s/1m30s  00/80 shared iters
+
+running (1m00.0s), 90/90 VUs, 44 complete and 0 interrupted iterations
+mass_recal          [  22% ] 50 VUs  1m00.0s/2m0s   044/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m30.0s/1m30s  00/80 shared iters
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-32-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-43-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-8-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-6-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-13-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-48-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-25-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-22-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-2-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-27-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-16-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-18-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-26-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-34-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-37-0/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-57-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-15-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-1-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-11-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-10-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-33-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-41-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-17-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-58-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-44-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-7-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-40-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-45-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-31-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-50-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-42-2/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-9-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-28-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-4-2/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-3-2/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-21-2/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-29-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-36-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-23-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-39-2/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-19-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-35-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-14-2/recalibrate\": request timeout"
+time="2026-04-07T09:02:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-5-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-30-1/recalibrate\": request timeout"
+time="2026-04-07T09:02:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-20-2/recalibrate\": request timeout"
+time="2026-04-07T09:02:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-12-2/recalibrate\": request timeout"
+time="2026-04-07T09:02:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-38-2/recalibrate\": request timeout"
+time="2026-04-07T09:02:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-24-2/recalibrate\": request timeout"
+
+running (1m01.0s), 90/90 VUs, 88 complete and 0 interrupted iterations
+mass_recal          [  44% ] 50 VUs  1m01.0s/2m0s   088/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m31.0s/1m30s  00/80 shared iters
+
+running (1m02.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m02.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m32.0s/1m30s  00/80 shared iters
+
+running (1m03.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m03.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m33.0s/1m30s  00/80 shared iters
+
+running (1m04.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m04.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m34.0s/1m30s  00/80 shared iters
+
+running (1m05.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m05.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m35.0s/1m30s  00/80 shared iters
+
+running (1m06.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m06.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m36.0s/1m30s  00/80 shared iters
+
+running (1m07.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m07.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m37.0s/1m30s  00/80 shared iters
+
+running (1m08.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m08.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m38.0s/1m30s  00/80 shared iters
+
+running (1m09.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m09.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m39.0s/1m30s  00/80 shared iters
+
+running (1m10.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m10.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m40.0s/1m30s  00/80 shared iters
+
+running (1m11.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m11.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m41.0s/1m30s  00/80 shared iters
+
+running (1m12.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m12.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m42.0s/1m30s  00/80 shared iters
+
+running (1m13.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m13.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m43.0s/1m30s  00/80 shared iters
+
+running (1m14.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m14.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m44.0s/1m30s  00/80 shared iters
+
+running (1m15.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m15.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m45.0s/1m30s  00/80 shared iters
+
+running (1m16.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m16.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m46.0s/1m30s  00/80 shared iters
+
+running (1m17.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m17.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m47.0s/1m30s  00/80 shared iters
+
+running (1m18.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m18.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m48.0s/1m30s  00/80 shared iters
+
+running (1m19.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m19.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m49.0s/1m30s  00/80 shared iters
+
+running (1m20.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m20.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m50.0s/1m30s  00/80 shared iters
+
+running (1m21.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m21.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m51.0s/1m30s  00/80 shared iters
+
+running (1m22.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m22.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m52.0s/1m30s  00/80 shared iters
+
+running (1m23.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m23.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m53.0s/1m30s  00/80 shared iters
+
+running (1m24.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m24.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m54.0s/1m30s  00/80 shared iters
+
+running (1m25.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m25.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m55.0s/1m30s  00/80 shared iters
+
+running (1m26.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m26.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m56.0s/1m30s  00/80 shared iters
+
+running (1m27.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m27.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m57.0s/1m30s  00/80 shared iters
+
+running (1m28.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m28.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m58.0s/1m30s  00/80 shared iters
+
+running (1m29.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m29.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  0m59.0s/1m30s  00/80 shared iters
+
+running (1m30.0s), 90/90 VUs, 94 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m30.0s/2m0s   094/200 shared iters
+split_party_recal   [   0% ] 40 VUs  1m00.0s/1m30s  00/80 shared iters
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-49-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-65-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-51-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-47-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-55-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-68-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-89-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-81-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-76-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-71-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-54-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-80-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-62-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-63-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-60-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-66-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-83-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-67-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-82-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-84-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-79-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-86-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-53-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-88-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-52-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-73-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-90-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-87-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-59-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-75-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-77-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-74-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-64-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-72-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-78-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-85-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-56-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-70-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-61-0/split-party\": request timeout"
+time="2026-04-07T09:02:57-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-69-0/split-party\": request timeout"
+
+running (1m31.0s), 90/90 VUs, 134 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m31.0s/2m0s   094/200 shared iters
+split_party_recal   [  50% ] 40 VUs  1m01.0s/1m30s  40/80 shared iters
+
+running (1m32.0s), 90/90 VUs, 134 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m32.0s/2m0s   094/200 shared iters
+split_party_recal   [  50% ] 40 VUs  1m02.0s/1m30s  40/80 shared iters
+
+running (1m33.0s), 90/90 VUs, 134 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m33.0s/2m0s   094/200 shared iters
+split_party_recal   [  50% ] 40 VUs  1m03.0s/1m30s  40/80 shared iters
+
+running (1m34.0s), 90/90 VUs, 134 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m34.0s/2m0s   094/200 shared iters
+split_party_recal   [  50% ] 40 VUs  1m04.0s/1m30s  40/80 shared iters
+
+running (1m35.0s), 90/90 VUs, 134 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m35.0s/2m0s   094/200 shared iters
+split_party_recal   [  50% ] 40 VUs  1m05.0s/1m30s  40/80 shared iters
+
+running (1m36.0s), 90/90 VUs, 134 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m36.0s/2m0s   094/200 shared iters
+split_party_recal   [  50% ] 40 VUs  1m06.0s/1m30s  40/80 shared iters
+
+running (1m37.0s), 90/90 VUs, 134 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m37.0s/2m0s   094/200 shared iters
+split_party_recal   [  50% ] 40 VUs  1m07.0s/1m30s  40/80 shared iters
+
+running (1m38.0s), 90/90 VUs, 134 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m38.0s/2m0s   094/200 shared iters
+split_party_recal   [  50% ] 40 VUs  1m08.0s/1m30s  40/80 shared iters
+time="2026-04-07T09:03:05-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-53-1/split-party\": dial: i/o timeout"
+time="2026-04-07T09:03:05-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-73-1/split-party\": dial: i/o timeout"
+time="2026-04-07T09:03:05-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-70-1/split-party\": dial: i/o timeout"
+time="2026-04-07T09:03:05-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-86-1/split-party\": dial: i/o timeout"
+time="2026-04-07T09:03:05-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-87-1/split-party\": dial: i/o timeout"
+time="2026-04-07T09:03:05-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-split-83-1/split-party\": dial: i/o timeout"
+
+running (1m39.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m39.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m09.0s/1m30s  46/80 shared iters
+
+running (1m40.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m40.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m10.0s/1m30s  46/80 shared iters
+
+running (1m41.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m41.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m11.0s/1m30s  46/80 shared iters
+
+running (1m42.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m42.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m12.0s/1m30s  46/80 shared iters
+
+running (1m43.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m43.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m13.0s/1m30s  46/80 shared iters
+
+running (1m44.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m44.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m14.0s/1m30s  46/80 shared iters
+
+running (1m45.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m45.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m15.0s/1m30s  46/80 shared iters
+
+running (1m46.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m46.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m16.0s/1m30s  46/80 shared iters
+
+running (1m47.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m47.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m17.0s/1m30s  46/80 shared iters
+
+running (1m48.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m48.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m18.0s/1m30s  46/80 shared iters
+
+running (1m49.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m49.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m19.0s/1m30s  46/80 shared iters
+
+running (1m50.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m50.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m20.0s/1m30s  46/80 shared iters
+
+running (1m51.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m51.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m21.0s/1m30s  46/80 shared iters
+
+running (1m52.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m52.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m22.0s/1m30s  46/80 shared iters
+
+running (1m53.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m53.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m23.0s/1m30s  46/80 shared iters
+
+running (1m54.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m54.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m24.0s/1m30s  46/80 shared iters
+
+running (1m55.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m55.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m25.0s/1m30s  46/80 shared iters
+
+running (1m56.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m56.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m26.0s/1m30s  46/80 shared iters
+
+running (1m57.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m57.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m27.0s/1m30s  46/80 shared iters
+
+running (1m58.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m58.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m28.0s/1m30s  46/80 shared iters
+
+running (1m59.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  1m59.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m29.0s/1m30s  46/80 shared iters
+
+running (2m00.0s), 84/90 VUs, 140 complete and 0 interrupted iterations
+mass_recal          [  47% ] 50 VUs  2m00.0s/2m0s   094/200 shared iters
+split_party_recal   [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-6-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-48-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-34-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-13-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-18-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-16-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-46-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-25-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-8-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-43-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-22-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-37-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-32-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-26-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-27-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-2-1/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-57-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-15-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-41-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-1-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-58-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-10-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-11-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-44-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-33-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-42-3/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-17-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-31-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:27-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-9-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-45-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-28-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-3-3/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-50-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-29-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-7-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-40-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-23-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-4-3/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-19-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-39-3/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-36-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-35-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-14-3/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-21-3/recalibrate\": request timeout"
+
+running (2m01.0s), 54/90 VUs, 170 complete and 0 interrupted iterations
+mass_recal        ↓ [  47% ] 50 VUs  2m00.0s/2m0s   094/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-30-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-5-2/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-24-3/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-12-3/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-38-3/recalibrate\": request timeout"
+time="2026-04-07T09:03:28-07:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:3000/api/trips/trip-recal-20-3/recalibrate\": request timeout"
+
+running (2m02.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m03.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m04.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m05.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m06.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m07.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m08.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m09.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m10.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m11.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m12.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m13.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m14.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m15.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m16.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m17.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m18.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m19.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m20.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m21.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m22.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m23.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m24.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m25.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m26.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m27.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m28.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m29.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m30.0s), 34/90 VUs, 190 complete and 0 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ↓ [  57% ] 40 VUs  1m30.0s/1m30s  46/80 shared iters
+
+running (2m30.0s), 00/90 VUs, 190 complete and 34 interrupted iterations
+mass_recal        ✗ [  72% ] 50 VUs  2m01.3s/2m0s   144/200 shared iters
+split_party_recal ✗ [  57% ] 40 VUs  2m00.0s/1m30s  46/80 shared iters
+time="2026-04-07T09:03:57-07:00" level=error msg="thresholds on metrics 'recalibration_latency_ms, recalibration_success_rate, split_party_recal_success' have been crossed"

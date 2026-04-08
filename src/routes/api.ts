@@ -9,6 +9,9 @@ import {
     disneyAPIClient, sessionManager
 } from '../workers/QueueManager';
 import { getSupabaseClient } from '../config/supabase';
+import { HeuristicEngine } from '../services/HeuristicEngine';
+
+const heuristicEngine = new HeuristicEngine();
 
 const router = Router();
 
@@ -165,6 +168,7 @@ router.get('/admin/logs', (_req, res) => {
 });
 
 router.post('/admin/force-replenish', FleetController.forceReplenish);
+router.post('/admin/kill-switch', FleetController.toggleKillSwitch);
 
 // ── Disney API Integration: Admin Endpoints ──────────────────────────
 
@@ -517,6 +521,26 @@ router.get('/admin/fleet-alerts', async (_req, res) => {
                 }
             }
         } catch { /* circuits unavailable */ }
+
+        // Fetch Heuristic Recommendations
+        try {
+            const recommendations = await heuristicEngine.generateRecommendations();
+            for (const rec of recommendations) {
+                if (rec.id !== 'REC-NOMINAL') { // Skip the nominal placeholder from heuristics if we have real alerts
+                    alerts.push({
+                        id: rec.id,
+                        type: 'HEURISTIC_RECOMMENDATION',
+                        severity: rec.impact === 'High' ? 'critical' : rec.impact === 'Medium' ? 'warning' : 'info',
+                        title: `Optimization: ${rec.action}`,
+                        detail: rec.reasoning,
+                        timestamp: new Date().toISOString(),
+                        resolved: false,
+                    });
+                }
+            }
+        } catch (e) {
+            console.error('[Fleet Alerts] Failed to pull heuristic recommendations', e);
+        }
 
         // Always include a system status entry if no alerts
         if (alerts.length === 0) {

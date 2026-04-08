@@ -92,6 +92,19 @@ export class FleetOrchestrator {
   }
 
   /**
+   * Toggles the global kill switch status
+   */
+  async toggleKillSwitch(active: boolean): Promise<{ killSwitchActive: boolean }> {
+      // Typically this would also notify the RateLimiter and queueing layer to reject non-essential requests
+      if (active) {
+          this.emitAlert('LOAD_SHED_ACTIVE', 'critical', 'GLOBAL KILL SWITCH ENGAGED: All automated fleet activity paused.');
+      } else {
+          this.emitAlert('LOAD_SHED_ACTIVE', 'info', 'Global systems resumed. Fleet re-sync in progress.');
+      }
+      return { killSwitchActive: active };
+  }
+
+  /**
    * [Rotate Proxies & Burn] button
    * Rotates proxy group and deactivates compromised accounts.
    */

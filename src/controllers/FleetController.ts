@@ -162,4 +162,22 @@ export class FleetController {
             res.status(500).json({ error: 'Failed to store test OTP' });
         }
     }
+    /**
+     * Toggles the global kill switch to pause or resume automated operations.
+     * POST /admin/kill-switch
+     */
+    static async toggleKillSwitch(req: Request, res: Response) {
+        try {
+            const { active } = req.body;
+            console.log(`[FleetController] Global Kill Switch requested: ${active ? 'ENGAGED' : 'DISENGAGED'}`);
+            
+            // In a full implementation, this state should persist in the DB (Feature Flags).
+            // For now, we update it via the orchestrator.
+            const result = await orchestrator.toggleKillSwitch(!!active);
+            
+            res.status(200).json({ success: true, message: `Kill switch ${active ? 'engaged' : 'disengaged'}`, ...result });
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to toggle kill switch', details: String(error) });
+        }
+    }
 }

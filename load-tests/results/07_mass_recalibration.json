@@ -1,0 +1,366 @@
+{
+  "options": {
+    "summaryTrendStats": [
+      "avg",
+      "min",
+      "med",
+      "max",
+      "p(90)",
+      "p(95)"
+    ],
+    "summaryTimeUnit": "",
+    "noColor": false
+  },
+  "state": {
+    "isStdOutTTY": true,
+    "isStdErrTTY": true,
+    "testRunDurationMs": 32089.458
+  },
+  "metrics": {
+    "iterations": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 280,
+        "rate": 8.725607020224523
+      }
+    },
+    "vus": {
+      "values": {
+        "value": 5,
+        "min": 0,
+        "max": 50
+      },
+      "type": "gauge",
+      "contains": "default"
+    },
+    "no_flash_mob": {
+      "thresholds": {
+        "rate==1": {
+          "ok": true
+        }
+      },
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 1,
+        "passes": 200,
+        "fails": 0
+      }
+    },
+    "recalibration_latency_ms": {
+      "values": {
+        "avg": 265.015,
+        "min": 117,
+        "med": 180.5,
+        "max": 661,
+        "p(90)": 553.1,
+        "p(95)": 618.1
+      },
+      "thresholds": {
+        "p(95)<5000": {
+          "ok": true
+        }
+      },
+      "type": "trend",
+      "contains": "default"
+    },
+    "split_party_recal_success": {
+      "contains": "default",
+      "values": {
+        "rate": 1,
+        "passes": 80,
+        "fails": 0
+      },
+      "thresholds": {
+        "rate>0.90": {
+          "ok": true
+        }
+      },
+      "type": "rate"
+    },
+    "http_req_duration{expected_response:true}": {
+      "values": {
+        "max": 534.323,
+        "p(90)": 328.72860000000003,
+        "p(95)": 424.6464,
+        "avg": 172.2798788461539,
+        "min": 74.79,
+        "med": 139.75
+      },
+      "type": "trend",
+      "contains": "time"
+    },
+    "http_req_blocked": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 19.085809615384797,
+        "min": 0,
+        "med": 0.001,
+        "max": 126.978,
+        "p(90)": 109.05980000000001,
+        "p(95)": 120.1433
+      }
+    },
+    "iteration_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 1209.307792,
+        "p(90)": 983.1800039000002,
+        "p(95)": 1085.2201645500002,
+        "avg": 595.311179457143,
+        "min": 234.019209,
+        "med": 494.7045835
+      }
+    },
+    "http_req_receiving": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(90)": 0.030100000000000012,
+        "p(95)": 0.03804999999999997,
+        "avg": 0.01653269230769228,
+        "min": 0.006,
+        "med": 0.012,
+        "max": 0.135
+      }
+    },
+    "group_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 355.68041918214294,
+        "min": 116.725959,
+        "med": 273.4248335,
+        "max": 828.974667,
+        "p(90)": 695.8686212,
+        "p(95)": 723.429267
+      }
+    },
+    "http_req_connecting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 124.179,
+        "p(90)": 108.79970000000002,
+        "p(95)": 117.45979999999999,
+        "avg": 18.846655769230775,
+        "min": 0,
+        "med": 0
+      }
+    },
+    "vus_max": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "value": 90,
+        "min": 90,
+        "max": 90
+      }
+    },
+    "http_req_sending": {
+      "values": {
+        "p(95)": 0.018,
+        "avg": 0.007573076923076888,
+        "min": 0.002,
+        "med": 0.006,
+        "max": 0.059,
+        "p(90)": 0.013
+      },
+      "type": "trend",
+      "contains": "time"
+    },
+    "diversified_slots": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 439,
+        "rate": 13.68050529242345
+      }
+    },
+    "checks": {
+      "values": {
+        "rate": 1,
+        "passes": 720,
+        "fails": 0
+      },
+      "type": "rate",
+      "contains": "default"
+    },
+    "data_received": {
+      "contains": "data",
+      "values": {
+        "rate": 18041.844147071602,
+        "count": 578953
+      },
+      "type": "counter"
+    },
+    "recalibration_attempts": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 200,
+        "rate": 6.232576443017517
+      }
+    },
+    "http_reqs": {
+      "values": {
+        "rate": 16.204698751845545,
+        "count": 520
+      },
+      "type": "counter",
+      "contains": "default"
+    },
+    "http_req_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 534.323,
+        "p(90)": 328.72860000000003,
+        "p(95)": 424.6464,
+        "avg": 172.2798788461539,
+        "min": 74.79,
+        "med": 139.75
+      }
+    },
+    "advisory_filters": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 31,
+        "rate": 0.9660493486677151
+      }
+    },
+    "recalibration_success_rate": {
+      "thresholds": {
+        "rate>0.95": {
+          "ok": true
+        }
+      },
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 1,
+        "passes": 200,
+        "fails": 0
+      }
+    },
+    "http_req_waiting": {
+      "contains": "time",
+      "values": {
+        "min": 74.756,
+        "med": 139.71800000000002,
+        "max": 534.301,
+        "p(90)": 328.6940000000001,
+        "p(95)": 424.60445,
+        "avg": 172.2557730769231
+      },
+      "type": "trend"
+    },
+    "http_req_tls_handshaking": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0,
+        "min": 0,
+        "med": 0,
+        "max": 0,
+        "p(90)": 0,
+        "p(95)": 0
+      }
+    },
+    "recalibration_success": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 200,
+        "rate": 6.232576443017517
+      }
+    },
+    "http_req_failed": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 520
+      }
+    },
+    "data_sent": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 1026148,
+        "rate": 31977.729259247695
+      }
+    }
+  },
+  "root_group": {
+    "checks": [],
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": [
+        {
+          "id": "278130ae4d89eac66c824878398c7df3",
+          "groups": [],
+          "checks": [
+              {
+                "name": "recal: status 200",
+                "path": "::Mass Recalibration::recal: status 200",
+                "id": "315e1f4400be4a10fa326844c9f5d453",
+                "passes": 200,
+                "fails": 0
+              },
+              {
+                "name": "recal: has response body",
+                "path": "::Mass Recalibration::recal: has response body",
+                "id": "7ef1d4b9c48e1e41e24b2dec17777574",
+                "passes": 200,
+                "fails": 0
+              }
+            ],
+          "name": "Mass Recalibration",
+          "path": "::Mass Recalibration"
+        },
+        {
+          "name": "Split Party Recalibration",
+          "path": "::Split Party Recalibration",
+          "id": "ac02a923f72e192fdf5830c0f29af3f5",
+          "groups": [],
+          "checks": [
+              {
+                "fails": 0,
+                "name": "split: status 201",
+                "path": "::Split Party Recalibration::split: status 201",
+                "id": "d02272cb88b26e9bfeea92282d856c7b",
+                "passes": 80
+              },
+              {
+                "name": "split: has sub-groups",
+                "path": "::Split Party Recalibration::split: has sub-groups",
+                "id": "8fcd08ce2431b4e7f9a7a455f21faad3",
+                "passes": 80,
+                "fails": 0
+              },
+              {
+                "passes": 80,
+                "fails": 0,
+                "name": "reunion: status 200",
+                "path": "::Split Party Recalibration::reunion: status 200",
+                "id": "c65876cf069ef460108b5d62e246811a"
+              },
+              {
+                "path": "::Split Party Recalibration::reunion: has location",
+                "id": "1b19140c7add6f120e9df6de0de838b9",
+                "passes": 80,
+                "fails": 0,
+                "name": "reunion: has location"
+              }
+            ]
+        }
+      ]
+  }
+}
