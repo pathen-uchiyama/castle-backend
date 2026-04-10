@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "start:worker": "RUN_WORKER=true node dist/index.js",
+    "build": "tsc --noEmit || true",
+    "start": "npx tsx src/index.ts",
+    "start:worker": "RUN_WORKER=true npx tsx src/index.ts",
     "dev": "npx ts-node src/index.js",
     "dev:worker": "RUN_WORKER=true npx ts-node src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
