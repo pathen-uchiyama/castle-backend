@@ -9,7 +9,8 @@
     "start:worker": "RUN_WORKER=true node dist/index.js",
     "dev": "npx ts-node src/index.js",
     "dev:worker": "RUN_WORKER=true npx ts-node src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "seed:fleet": "node register_first_batch.js"
   },
   "keywords": [],
   "author": "",
