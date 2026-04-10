@@ -1,3 +1,5 @@
+import { Logtail } from "@logtail/node";
+
 export interface LogEntry {
     timestamp: string;
     level: 'info' | 'warn' | 'error' | 'debug';
@@ -7,12 +9,19 @@ export interface LogEntry {
 class InMemoryLogger {
     private logs: LogEntry[] = [];
     private maxLogs = 200;
+    private logtail: Logtail | null = null;
     
     // Store original console methods
     private originalConsoleLog = console.log;
     private originalConsoleWarn = console.warn;
     private originalConsoleError = console.error;
     private originalConsoleInfo = console.info;
+
+    constructor() {
+        if (process.env.LOGTAIL_SOURCE_TOKEN) {
+            this.logtail = new Logtail(process.env.LOGTAIL_SOURCE_TOKEN);
+        }
+    }
 
     public init() {
         console.log = (...args) => {
@@ -50,6 +59,16 @@ class InMemoryLogger {
             level,
             message
         });
+
+        // BetterStack (Logtail) Streaming
+        if (this.logtail) {
+            if (level === 'error') {
+                this.logtail.error(message);
+            } else if (level === 'warn') {
+                this.logtail.warn(message);
+            }
+            // Skipping info/debug to save free-tier quota unless explicitly requested
+        }
 
         // Maintain ring buffer limit
         if (this.logs.length > this.maxLogs) {

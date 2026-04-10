@@ -6,8 +6,6 @@ export const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-  PINECONE_API_KEY: process.env.PINECONE_API_KEY,
-  PINECONE_INDEX_NAME: process.env.PINECONE_INDEX_NAME || 'castle-companion-lore',
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
   FIREBASE_SERVICE_ACCOUNT_PATH: process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
   SUPABASE_URL: process.env.SUPABASE_URL,
@@ -39,7 +37,7 @@ export const env = {
 };
 
 // Validation
-const required = ['OPENAI_API_KEY', 'GEMINI_API_KEY', 'PINECONE_API_KEY', 'RESEND_API_KEY'];
+const required = ['OPENAI_API_KEY', 'GEMINI_API_KEY', 'RESEND_API_KEY'];
 required.forEach(key => {
   if (!process.env[key]) {
     console.warn(`⚠️  WARNING: Missing required environment variable: ${key}. Some features may malfunction.`);

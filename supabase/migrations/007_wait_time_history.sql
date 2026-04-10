@@ -10,7 +10,7 @@
 -- Table: wait_time_history
 -- Append-only time-series of wait time snapshots
 -- ────────────────────────────────────────────────────────────
-CREATE TABLE wait_time_history (
+CREATE TABLE IF NOT EXISTS wait_time_history (
     id              BIGSERIAL PRIMARY KEY,
     park_id         TEXT NOT NULL,              -- e.g., 'MK', 'EP', 'HS', 'AK'
     attraction_id   TEXT NOT NULL,              -- e.g., 'MK_12345'
@@ -21,11 +21,11 @@ CREATE TABLE wait_time_history (
 );
 
 -- Optimized indexes for time-series queries
-CREATE INDEX idx_wait_history_attraction_time
+CREATE INDEX IF NOT EXISTS idx_wait_history_attraction_time
     ON wait_time_history(attraction_id, recorded_at DESC);
-CREATE INDEX idx_wait_history_park_time
+CREATE INDEX IF NOT EXISTS idx_wait_history_park_time
     ON wait_time_history(park_id, recorded_at DESC);
-CREATE INDEX idx_wait_history_recorded
+CREATE INDEX IF NOT EXISTS idx_wait_history_recorded
     ON wait_time_history(recorded_at DESC);
 
 -- ────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ CREATE INDEX idx_wait_history_recorded
 -- Tracks when LL return times become available / sell out
 -- Used to predict sell-out times per attraction
 -- ────────────────────────────────────────────────────────────
-CREATE TABLE ll_availability_history (
+CREATE TABLE IF NOT EXISTS ll_availability_history (
     id              BIGSERIAL PRIMARY KEY,
     park_id         TEXT NOT NULL,
     attraction_id   TEXT NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE ll_availability_history (
     recorded_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_ll_history_attraction_time
+CREATE INDEX IF NOT EXISTS idx_ll_history_attraction_time
     ON ll_availability_history(attraction_id, recorded_at DESC);
 
 -- ────────────────────────────────────────────────────────────
@@ -53,6 +53,7 @@ CREATE INDEX idx_ll_history_attraction_time
 -- Pre-computed for fast ItineraryProcessor lookups
 -- Refresh every 6 hours via BullMQ job
 -- ────────────────────────────────────────────────────────────
+DROP MATERIALIZED VIEW IF EXISTS mv_hourly_wait_averages;
 CREATE MATERIALIZED VIEW mv_hourly_wait_averages AS
 SELECT
     attraction_id,
@@ -71,13 +72,14 @@ GROUP BY attraction_id, attraction_name,
          EXTRACT(DOW FROM recorded_at),
          EXTRACT(HOUR FROM recorded_at);
 
-CREATE UNIQUE INDEX idx_mv_hourly_avg
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_hourly_avg
     ON mv_hourly_wait_averages(attraction_id, day_of_week, hour_of_day);
 
 -- ────────────────────────────────────────────────────────────
 -- Materialized View: LL Sell-Out Times
 -- Predicts when each ride's LL typically becomes unavailable
 -- ────────────────────────────────────────────────────────────
+DROP MATERIALIZED VIEW IF EXISTS mv_ll_sellout_predictions;
 CREATE MATERIALIZED VIEW mv_ll_sellout_predictions AS
 SELECT
     attraction_id,
@@ -89,7 +91,7 @@ SELECT
         'HH24:MI'
     ) AS earliest_sellout_time,
     TO_CHAR(
-        AVG(EXTRACT(EPOCH FROM recorded_at) FILTER (WHERE is_available = FALSE))
+        AVG(EXTRACT(EPOCH FROM recorded_at)) FILTER (WHERE is_available = FALSE)
         * INTERVAL '1 second' + DATE '2000-01-01',
         'HH24:MI'
     ) AS avg_sellout_time,
@@ -116,7 +118,9 @@ GROUP BY attraction_id, attraction_name,
 ALTER TABLE wait_time_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ll_availability_history ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Service role full access" ON wait_time_history;
 CREATE POLICY "Service role full access" ON wait_time_history
     FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "Service role full access" ON ll_availability_history;
 CREATE POLICY "Service role full access" ON ll_availability_history
     FOR ALL USING (auth.role() = 'service_role');

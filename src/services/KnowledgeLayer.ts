@@ -1,29 +1,18 @@
-import { Pinecone } from "@pinecone-database/pinecone";
 import { OpenAIEmbeddings } from "@langchain/openai";
+import { getSupabaseClient } from "../config/supabase";
 import { env } from "../config/env";
 
 export class KnowledgeLayer {
-    private pinecone: Pinecone | null = null;
     private embeddings: OpenAIEmbeddings;
-    private indexName = env.PINECONE_INDEX_NAME;
 
     constructor() {
-        if (env.PINECONE_API_KEY) {
-            this.pinecone = new Pinecone({
-                apiKey: env.PINECONE_API_KEY,
-            });
-            console.log("📚 KnowledgeLayer: Pinecone initialized.");
-        } else {
-            console.warn("⚠️  KnowledgeLayer: PINECONE_API_KEY missing. Semantic search will be disabled.");
-        }
-
         if (env.OPENAI_API_KEY) {
             this.embeddings = new OpenAIEmbeddings({
                 openAIApiKey: env.OPENAI_API_KEY,
             });
+            console.log("📚 KnowledgeLayer: RAG Engine initialized via Supabase pgvector.");
         } else {
-            console.warn("⚠️  KnowledgeLayer: OPENAI_API_KEY missing. Embeddings will be disabled.");
-            // Stub it out to prevent crashes in methods
+            console.warn("⚠️  KnowledgeLayer: OPENAI_API_KEY missing. Embeddings disabled.");
             this.embeddings = {
                 embedQuery: async () => [],
                 embedDocuments: async () => []
@@ -32,29 +21,33 @@ export class KnowledgeLayer {
     }
 
     /**
-     * Searches the RAG database for specific rules, lore, or recent scrapes.
+     * Searches the pgvector database for specific rules, lore, or recent scrapes.
      */
     async retrieveContext(query: string, topK: number = 3): Promise<string> {
-        if (!this.pinecone) {
+        if (!env.OPENAI_API_KEY) {
             return "Knowledge Layer offline (Missing Credentials).";
         }
 
         try {
-            const index = this.pinecone.Index(this.indexName);
-
-            // Convert user query into a mathematical vector
             const queryEmbedding = await this.embeddings.embedQuery(query);
+            const db = getSupabaseClient();
 
-            // Perform semantic search
-            const queryResponse = await index.query({
-                vector: queryEmbedding,
-                topK,
-                includeMetadata: true,
+            // Perform semantic search via pgvector rpc
+            const { data, error } = await db.rpc('match_knowledge_vectors', {
+                query_embedding: queryEmbedding,
+                match_threshold: 0.7, // Adjust threshold if needed, 0.7 implies strong cosine similarity
+                match_count: topK
             });
 
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                return "No contextual lore found.";
+            }
+
             // Stitch chunks together for context injection
-            const context = queryResponse.matches
-                .map(match => match.metadata?.text || '')
+            const context = data
+                .map((match: any) => match.content || '')
                 .join("\n\n---\n\n");
 
             return context;
@@ -65,35 +58,34 @@ export class KnowledgeLayer {
     }
 
     /**
-     * Upserts a document into the Vector DB.
+     * Upserts a document into the Supabase knowledge_vectors table.
      * Used by the Scraper Pipeline and seed scripts to keep the knowledge layer current.
      */
     async upsertDocument(id: string, text: string, metadata: Record<string, string> = {}): Promise<void> {
-        if (!this.pinecone) {
-            console.warn(`[KnowledgeLayer] Skip upsert for ${id}: Pinecone offline`);
+        if (!env.OPENAI_API_KEY) {
+            console.warn(`[KnowledgeLayer] Skip upsert for ${id}: RAG offline`);
             return;
         }
 
         try {
-            const index = this.pinecone.Index(this.indexName);
-
-            // Generate vector embedding from the text
             const embedding = await this.embeddings.embedQuery(text);
+            const db = getSupabaseClient();
 
-            // Upsert into Pinecone with metadata for filtered retrieval
-            await index.upsert({
-                records: [{
-                    id,
-                    values: embedding,
-                    metadata: {
-                        text,
-                        ...metadata,
-                        updatedAt: new Date().toISOString()
-                    }
-                }]
+            const { error } = await db.from('knowledge_vectors').upsert({
+                id,
+                content: text,
+                embedding: embedding,
+                metadata: {
+                    ...metadata,
+                    updatedAt: new Date().toISOString()
+                }
+            }, {
+                onConflict: 'id'
             });
 
-            console.log(`📚 Upserted document '${id}' into KnowledgeLayer`);
+            if (error) throw error;
+
+            console.log(`📚 Upserted document '${id}' into Supabase pgvector`);
         } catch (error) {
             console.error("Vector DB upsert error:", error);
         }

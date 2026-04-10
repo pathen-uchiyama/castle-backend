@@ -98,6 +98,52 @@ router.get('/skipper/pool-stats', (_req, res) => {
     });
 });
 
+// ── Strategy Engine ───────────────────────────────────────
+router.get('/admin/strategy/rules', (_req, res) => {
+    res.json([
+        { title: "Micro-Delight", condition: "Standby Wait > 45m", outcome: "Push dead-air location-based trivia content", confidence: 82 },
+        { title: "Show Transition Pivot", condition: "Show End Time < 15m", outcome: "Route to secondary exit for parade pathing avoidance", confidence: 91 },
+        { title: "Dining Sniper v2", condition: "Reservation Drop Window", outcome: "Recursively check 200ms pulses for snack-back opportunities", confidence: 98 },
+        { title: "Character Cluster", condition: "Meet & Greet Wait < 10m", outcome: "Nudge VIP segment to nearby character cluster", confidence: 85 },
+    ]);
+});
+
+router.get('/admin/strategy/conflicts', (_req, res) => {
+    res.json([
+        { id: "C-01", rules: ["Heat Surge Pivot", "The Rain Pivot"], conflict: "Contradictory outdoor bypass logic during mixed storm events.", severity: "high" },
+        { id: "C-02", rules: ["Rope Drop Peak", "Minimal Walking"], conflict: "Sprint-heavy rope drop conflicts with stamina-saving spatial override.", severity: "medium" },
+        { id: "C-03", rules: ["Show Transition", "Dining Pivot"], conflict: "Overlapping time constraints between Fantasmic seating and Oga's reservation.", severity: "high" }
+    ]);
+});
+
+router.get('/admin/strategy/personas', (_req, res) => {
+    res.json([
+        { name: "Toddler Tour", pacing: "Slow", thrill: "Low", rules: ["Stroller Friction", "Mandatory Breaks"] },
+        { name: "Rope Drop Sprinter", pacing: "Power Through", thrill: "High", rules: ["7AM VQ Sniper", "Cross-Park Sprints"] },
+        { name: "Grade-School Gradual", pacing: "Moderate", thrill: "Moderate", rules: ["Snack Buffers", "Wait Tolerance Cap"] },
+    ]);
+});
+
+router.get('/admin/strategy/intelligence', (_req, res) => {
+    res.json([
+        { title: "New Genie+ Multipass Changes Explained", platform: "youtube", author: "DFBGuide", link: "https://youtube.com" },
+        { title: "/r/WaltDisneyWorld Strategy Mega-thread", platform: "reddit", author: "WDW Mods", link: "https://reddit.com" },
+        { title: "Optimizing the 'Logistical Shadow' for Epcot", platform: "blog", author: "Disney Tourist Blog", link: "https://disneytouristblog.com" },
+    ]);
+});
+
+// ── RAG Management ────────────────────────────────────────
+router.get('/admin/rag/documents', (_req, res) => {
+    res.json([
+        { id: "doc_001", source: "MK_Parade_Shadows_V4.pdf", type: "Logistics", lastIndexed: "12 mins ago", embeddings: 1242, status: "Synced" },
+        { id: "doc_002", source: "Dining_SNR_Protocols_v4.json", type: "Policy", lastIndexed: "2 hrs ago", embeddings: 840, status: "Synced" },
+        { id: "doc_003", source: "Show_Seating_Buffers.md", type: "Logistics", lastIndexed: "5 mins ago", embeddings: 312, status: "Synced" },
+        { id: "doc_004", source: "Character_MeetGreet_Pacing.json", type: "Behavioral", lastIndexed: "1 hr ago", embeddings: 124, status: "Synced" },
+        { id: "doc_005", source: "User_Pacing_Ref_SarahC.json", type: "Behavioral", lastIndexed: "3 days ago", embeddings: 12, status: "Pending" },
+    ]);
+});
+
+
 router.get('/admin/ai-depth', (_req, res) => {
     res.json({
         status: 'Operational',
@@ -359,20 +405,33 @@ router.get('/admin/live-wait-times', async (_req, res) => {
             }
         }
         
-        // Enrich DOWN/CLOSED rides with historical downtime stats
-        const enrichedResults = await Promise.all(results.map(async (r) => {
-            if (r.status !== 'OPERATING' && r.status !== 'ACTIVE') {
-                const stats = await historicalAnalytics.getDowntimeStats(r.id);
-                if (stats) {
-                    return {
-                        ...r,
-                        avgDownTime: stats.avgDowntimeMinutes,
-                        downTimeTimer: stats.currentDownTimer
-                    };
-                }
+        // Bulk enrich ALL rides with historical downtime stats
+        const db = getSupabaseClient();
+        const { data: allStats } = await db.from('mv_downtime_statistics').select('*');
+        const statsMap = new Map();
+        if (allStats) {
+            allStats.forEach((s: any) => {
+                const lastOutageAt = new Date(s.last_outage_at);
+                const minutesSinceOffline = Math.round((Date.now() - lastOutageAt.getTime()) / 60000);
+                statsMap.set(s.attraction_id, {
+                    avgDownTime: s.avg_downtime_minutes,
+                    downTimeTimer: minutesSinceOffline
+                });
+            });
+        }
+
+        const enrichedResults = results.map((r) => {
+            const stats = statsMap.get(r.id);
+            if (stats) {
+                const isDown = r.status !== 'OPERATING' && r.status !== 'ACTIVE';
+                return {
+                    ...r,
+                    avgDownTime: stats.avgDownTime,
+                    downTimeTimer: isDown ? stats.downTimeTimer : undefined
+                };
             }
             return r;
-        }));
+        });
         
         res.json(enrichedResults);
     } catch (err) {

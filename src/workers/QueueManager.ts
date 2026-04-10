@@ -27,6 +27,7 @@ import {
     ThemeParksWikiClient,
     HistoricalAnalytics,
 } from '../services/disney';
+import { BackupService } from '../services/BackupService';
 
 // Catch uncaught ioredis errors so the process doesn't crash
 process.on('uncaughtException', (err: any) => {
@@ -92,6 +93,7 @@ const themeParksWiki = new ThemeParksWikiClient();
 const healthProbe = new HealthProbe(disneyAPIClient, sessionManager, circuitBreaker, themeParksWiki);
 const bg1Sync = new BG1SyncEngine(endpointRegistry);
 const historicalAnalytics = new HistoricalAnalytics();
+const backupService = new BackupService();
 
 export {
     diningSniper, vqSniper, waitMagic, telemetryCollector,
@@ -112,9 +114,13 @@ console.log("🚀 Agent Queue Initialized");
 })();
 
 // Worker: The Scout Agent runs asynchronously here
-const scoutWorker = new Worker(
-    "agent-tasks",
-    async (job: Job) => {
+// PHASE 1 HARDENING: Only run the worker if explicitly enabled to protect the main API process
+export let scoutWorker: Worker | null = null;
+
+if (process.env.RUN_WORKER === 'true') {
+    scoutWorker = new Worker(
+        "agent-tasks",
+        async (job: Job) => {
         switch (job.name) {
             case "poll-wait-times": {
                 const { tripId, parkId } = job.data;
@@ -228,6 +234,12 @@ const scoutWorker = new Worker(
                 break;
             }
 
+            case "backup-historical-data": {
+                console.log(`[Safety] Creating off-site R2 snapshot of telemetry database...`);
+                await backupService.runWeeklySnapshot();
+                break;
+            }
+
             case "infrastructure-guardrail-sync": {
                 console.log(`[Guardrail] Running Proof-of-Life check for long-term bots...`);
                 // In production, this queries Supabase for users.last_active < (now - 14 days)
@@ -319,7 +331,29 @@ const scoutWorker = new Worker(
                         displayPrice: e.queue?.PAID_RETURN_TIME?.price?.formatted ?? undefined,
                     }));
                 await historicalAnalytics.recordLLAvailability(llRecords);
-                console.log(`[ThemeParksWiki] ${liveData.length} entities, ${llRecords.length} LL records saved`);
+
+                // Build wait time snapshots
+                const snapshots = liveData
+                    .filter(e => e.entityType === 'ATTRACTION' || e.entityType === 'SHOW')
+                    .map(e => {
+                        const isOpen = e.status === 'OPERATING';
+                        const waitMinutes = isOpen ? (e.queue?.STANDBY?.waitTime ?? null) : null;
+                        
+                        return {
+                            parkId: parkSlug,
+                            attractionId: e.id,
+                            waitMinutes,
+                            isOpen,
+                            statusString: e.status,
+                            llPrice: e.queue?.PAID_RETURN_TIME?.price?.formatted ?? undefined,
+                            llState: e.queue?.PAID_RETURN_TIME?.state ?? e.queue?.RETURN_TIME?.state ?? undefined,
+                            recordedAt: new Date().toISOString(),
+                        };
+                    });
+
+                await historicalAnalytics.recordWaitTimes(snapshots);
+
+                console.log(`[ThemeParksWiki] ${liveData.length} entities: ${llRecords.length} LL records, ${snapshots.length} wait time snapshots saved`);
                 break;
             }
 
@@ -341,8 +375,39 @@ scoutWorker.on("completed", (job) => {
     console.log(`✅ Job [${job.id}] ${job.name} finished successfully.`);
 });
 
-scoutWorker.on("failed", (job, err) => {
+scoutWorker.on("failed", async (job, err) => {
     console.error(`❌ Job [${job?.id}] ${job?.name} failed:`, err);
+
+    // 1. Alert the Admin Dashboard via Fleet Alert Circuit Breaker
+    if (job?.name && job.name.startsWith('poll-themeparks-wiki')) {
+        try {
+            await circuitBreaker.recordFailure('ThemeParksWiki_ETL', 500, err.message);
+        } catch (cbErr) {
+            console.warn("Could not log failure to circuit breaker:", cbErr);
+        }
+    }
+
+    // 2. Alert the Admin via High-Priority Email
+    if (process.env.RESEND_API_KEY) {
+        try {
+            await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    from: 'Castle companion Watchdog <onboarding@resend.dev>',
+                    to: 'patchenu@yahoo.com',
+                    subject: `🚨 CRITICAL: Job ${job?.name} Failed`,
+                    html: `<h3>Background Job Failure Detected</h3><p><strong>Job Name:</strong> ${job?.name}</p><p><strong>Job ID:</strong> ${job?.id}</p><p><strong>Error Message:</strong> ${err.message}</p><p><strong>Stack Trace:</strong> <pre>${err.stack}</pre></p>`
+                })
+            });
+            console.log(`📧 Failure alert email securely dispatched to patchenu@yahoo.com`);
+        } catch (e) {
+            console.error('Failed to send Resend email alert:', e);
+        }
+    }
 });
 
 // ── Nightly Cron Jobs ────────────────────────────────────────────────
@@ -415,6 +480,13 @@ scoutWorker.on("failed", (job, err) => {
         });
         console.log('🧹 Historical Data Cleanup registered (weekly Sunday 2 AM)');
 
+        // Historical Data Backup — weekly on Sundays at 3 AM
+        await agentQueue.add('backup-historical-data', {}, {
+            repeat: { pattern: '0 3 * * 0', tz: 'America/New_York' },
+            jobId: 'backup-historical-data'
+        });
+        console.log('💾 Historical Data Backup registered (weekly Sunday 3 AM for Cloudflare R2)');
+
         // Fleet Auto-Replenisher — every 15 minutes
         await agentQueue.add('auto-replenish-fleet', {}, {
             repeat: { every: 15 * 60 * 1000 },
@@ -430,3 +502,4 @@ scoutWorker.on("failed", (job, err) => {
         console.warn('⚠️  Failed to register cron jobs:', err);
     }
 })();
+} // End Phase 1 RUN_WORKER block

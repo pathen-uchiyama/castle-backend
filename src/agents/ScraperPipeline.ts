@@ -3,6 +3,7 @@ import { KnowledgeLayer } from '../services/KnowledgeLayer';
 import { AttractionStatus, ParkID } from '../models/types';
 import { HistoricalAnalytics } from '../services/disney/HistoricalAnalytics';
 import { WaitTimeSnapshot } from '../services/disney/types';
+import { ThemeParksWikiClient } from '../services/disney/ThemeParksWikiClient';
 
 /**
  * ScraperPipeline — Multi-source ingestion service for live park data.
@@ -37,97 +38,54 @@ export class ScraperPipeline {
      * the ParkStatusRegistry. Called by the Scout BullMQ job every 60s.
      */
     async pollLiveWaitTimes(parkId: ParkID): Promise<number> {
-        const parkIdMap: Record<string, string> = {
-            'MK': '6', // Magic Kingdom
-            'EP': '5', // EPCOT
-            'HS': '7', // Hollywood Studios
-            'AK': '8', // Animal Kingdom
-            'DL': '16', // Disneyland
-            'DCA': '17', // California Adventure
-        };
-
-        const qtId = parkIdMap[parkId];
-        if (!qtId) {
-            console.warn(`[Scraper] Unknown parkId mapping for Queue-Times: ${parkId}`);
-            return 0;
-        }
-
         try {
-            const url = `https://queue-times.com/parks/${qtId}/queue_times.json`;
-            const response = await fetch(url);
+            const client = new ThemeParksWikiClient();
+            const liveData = await client.getLiveData(parkId);
 
-            if (!response.ok) {
-                console.error(`[Scraper] Queue-Times API returned ${response.status}`);
+            if (!liveData || liveData.length === 0) {
+                console.warn(`[Scraper] No live data returned from ThemeParksWiki for ${parkId}`);
                 return 0;
             }
 
-            const data = await response.json() as {
-                lands: Array<{
-                    rides: Array<{
-                        id: number;
-                        name: string;
-                        is_open: boolean;
-                        wait_time: number;
-                    }>;
-                }>;
-            };
-
             let updatedCount = 0;
+            const snapshots: WaitTimeSnapshot[] = [];
 
-            for (const land of data.lands) {
-                for (const ride of land.rides) {
-                    const status: AttractionStatus = {
-                        attractionId: `${parkId}_${ride.id}`,
-                        name: ride.name,
-                        parkId: parkId,
-                        status: ride.is_open ? 'OPEN' : 'CLOSED',
-                        currentWaitMins: ride.is_open ? ride.wait_time : undefined,
-                        lastUpdated: new Date().toISOString(),
-                    };
+            for (const entity of liveData) {
+                if (entity.entityType !== 'ATTRACTION' && entity.entityType !== 'SHOW') continue;
 
-                    // If ride is down, include a closure reason
-                    if (status.status === 'CLOSED') {
-                        status.closureReason = `Reported as CLOSED by live feed`;
-                    }
+                const isOpen = entity.status === 'OPERATING';
+                const waitMinutes = isOpen ? (entity.queue?.STANDBY?.waitTime ?? null) : null;
 
-                    await this.parkRegistry.updateAttractionStatus(status);
-                    updatedCount++;
+                const status: AttractionStatus = {
+                    attractionId: entity.id,
+                    name: entity.name,
+                    parkId: parkId,
+                    status: this.mapApiStatus(entity.status),
+                    currentWaitMins: waitMinutes ?? undefined,
+                    lastUpdated: new Date().toISOString(),
+                };
+
+                if (status.status === 'CLOSED' || status.status === 'DELAYED') {
+                    status.closureReason = `Reported as ${entity.status} by ThemeParksWiki`;
                 }
+
+                await this.parkRegistry.updateAttractionStatus(status);
+                updatedCount++;
+
+                // Build unified snapshot
+                snapshots.push({
+                    parkId,
+                    attractionId: entity.id,
+                    waitMinutes,
+                    isOpen,
+                    statusString: entity.status,
+                    llPrice: entity.queue?.PAID_RETURN_TIME?.price?.formatted ?? undefined,
+                    llState: entity.queue?.PAID_RETURN_TIME?.state ?? entity.queue?.RETURN_TIME?.state ?? undefined,
+                    recordedAt: new Date().toISOString(),
+                });
             }
 
-            // ── Record to Historical Analytics (DIY Thrill Data) ──────────
-            // Park Hours Guard: only record during WDW operating window (6 AM – 1 AM ET)
-            // Cuts storage ~50% by skipping dead hours when everything is closed/zero.
-            const etNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-            const etHour = etNow.getHours();
-            const isDuringParkHours = etHour >= 6 || etHour < 1; // 6:00 AM – 12:59 AM
-
-            if (isDuringParkHours) {
-                const snapshots: WaitTimeSnapshot[] = [];
-                for (const land of data.lands) {
-                    for (const ride of land.rides) {
-                        snapshots.push({
-                            parkId,
-                            attractionId: `${parkId}_${ride.id}`,
-                            waitMinutes: ride.is_open ? ride.wait_time : null,
-                            isOpen: ride.is_open,
-                            recordedAt: new Date().toISOString(),
-                        });
-                    }
-                }
-
-                try {
-                    const analytics = new HistoricalAnalytics();
-                    const recorded = await analytics.recordWaitTimes(snapshots);
-                    console.log(`[Scraper] 📊 Recorded ${recorded} wait time snapshots to history`);
-                } catch (histErr) {
-                    console.warn('[Scraper] Historical recording failed (non-fatal):', histErr);
-                }
-            } else {
-                console.log(`[Scraper] ⏸️  Skipping history recording — outside park hours (${etHour}:00 ET)`);
-            }
-
-            console.log(`[Scraper] Updated ${updatedCount} attractions for ${parkId}`);
+            console.log(`[Scraper] Updated ${updatedCount} attractions for ${parkId} (ThemeParksWiki)`);
             return updatedCount;
 
         } catch (error) {

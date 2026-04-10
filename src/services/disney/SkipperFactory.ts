@@ -58,8 +58,68 @@ export class SkipperFactory {
   private static readonly OTP_POLL_INTERVAL_MS = 3000;
   private static readonly OTP_POLL_TIMEOUT_MS = 600_000; // 10 minutes
 
+  // Production 2Captcha configuration
+  private readonly TWOCAPTCHA_KEY = process.env.TWOCAPTCHA_KEY;
+
   constructor() {
     this.registry = new AccountRegistry();
+  }
+
+  /**
+   * Invokes the 2Captcha API to solve any reCAPTCHA v3/Enterprise payloads 
+   * detected on the page before form submission.
+   */
+  private async solveCaptcha(page: any, siteKey: string, pageUrl: string): Promise<string> {
+    console.log(`[SkipperFactory] 🤖 Detecting CAPTCHA payload for siteKey=${siteKey}...`);
+    // If no key provided (or mock), use the simulation
+    if (!this.TWOCAPTCHA_KEY) {
+      console.warn(`[SkipperFactory] ⚠️ TWOCAPTCHA_KEY is missing. Registration will likely fail if a captcha is challenged.`);
+      await new Promise(r => setTimeout(r, 2000));
+      return '';
+    }
+
+    try {
+      // 1. Submit the challenge to 2captcha
+      const inUrl = `http://2captcha.com/in.php?key=${this.TWOCAPTCHA_KEY}&method=userrecaptcha&googlekey=${siteKey}&pageurl=${pageUrl}&json=1`;
+      const inRes = await fetch(inUrl, { method: 'POST' });
+      const inData = await inRes.json();
+
+      if (inData.status !== 1) {
+        throw new Error(`2Captcha submission failed: ${inData.request}`);
+      }
+      
+      const captchaId = inData.request;
+      console.log(`[SkipperFactory] CAPTCHA submitted to 2Captcha. ID: ${captchaId}. Waiting 15s...`);
+      
+      // Give workers 15 seconds before first poll
+      await new Promise(r => setTimeout(r, 15000));
+
+      // 2. Poll for the result
+      const maxRetries = 20;
+      for (let i = 0; i < maxRetries; i++) {
+        const resUrl = `http://2captcha.com/res.php?key=${this.TWOCAPTCHA_KEY}&action=get&id=${captchaId}&json=1`;
+        const resRes = await fetch(resUrl);
+        const resData = await resRes.json();
+
+        if (resData.status === 1) {
+          console.log(`[SkipperFactory] ✅ 2Captcha solved successfully in ~${15 + (i * 5)}s!`);
+          return resData.request; // This is the solved token string
+        }
+
+        if (resData.request !== 'CAPCHA_NOT_READY') {
+          throw new Error(`2Captcha polling failed: ${resData.request}`);
+        }
+
+        // Wait 5 seconds before checking again
+        await new Promise(r => setTimeout(r, 5000));
+      }
+      
+      throw new Error('2Captcha resolution timed out');
+      
+    } catch (err) {
+      console.error('[SkipperFactory] 2Captcha Error:', err);
+      throw err;
+    }
   }
 
   /**
@@ -269,6 +329,34 @@ export class SkipperFactory {
 
       // Screenshot before submit
       await page.screenshot({ path: `/tmp/factory_before_submit_${account.email.split('@')[0]}.png` });
+
+      // ────────────────────────────────────────────────────────────────
+      // STEP 3.5: CAPTCHA Resolution
+      // ────────────────────────────────────────────────────────────────
+      // We look for the invisible reCAPTCHA container. If found, we extract the sitekey
+      // (Disney usually uses 6L... or similar Enterprise keys).
+      try {
+        const siteKeyEval = await regFrame.evaluate(() => {
+           // Attempt to find the sitekey in the DOM or window objects
+           const elem = document.querySelector('.g-recaptcha, iframe[src*="recaptcha"]');
+           return elem ? elem.getAttribute('data-sitekey') : null;
+        });
+        
+        console.log(`[SkipperFactory] Passing challenge to 2Captcha handler...`);
+        const solvedToken = await this.solveCaptcha(page, siteKeyEval, SkipperFactory.DISNEY_REG_URL);
+        
+        // Inject the solved token back into the DOM where Disney expects it
+        await regFrame.evaluate((token: string) => {
+          const responseElement = document.getElementById('g-recaptcha-response');
+          if (responseElement) {
+            (responseElement as HTMLInputElement).value = token;
+          }
+        }, solvedToken);
+
+        console.log(`[SkipperFactory] ✅ CAPTCHA injected. Proceeding to submit.`);
+      } catch (err) {
+        console.warn(`[SkipperFactory] CAPTCHA handling skipped/failed: ${err}`);
+      }
 
       // ────────────────────────────────────────────────────────────────
       // STEP 4: Click "Agree & Continue"

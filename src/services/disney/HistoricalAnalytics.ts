@@ -15,7 +15,16 @@ import { HistoricalAverage, SellOutPrediction, WaitTimeSnapshot } from './types'
  * After 90 days of data collection, this replaces the need for
  * a Thrill-Data.com subscription.
  */
+import Redis from 'ioredis';
+import { env } from '../../config/env';
+
 export class HistoricalAnalytics {
+  private redis: Redis;
+
+  constructor() {
+    this.redis = new Redis(process.env.REDIS_URL || env.REDIS_URL as string, { lazyConnect: true });
+  }
+
   /**
    * Record a batch of wait time snapshots.
    * Called by ScraperPipeline after each poll cycle.
@@ -39,7 +48,14 @@ export class HistoricalAnalytics {
 
       return rows.length;
     } catch (err) {
-      console.error('[HistoricalAnalytics] Failed to record wait times:', err);
+      console.error('[HistoricalAnalytics] Failed to record wait times, routing to DLQ:', err);
+      try {
+        const payload = JSON.stringify(snapshots);
+        await this.redis.lpush('disney:dlq:wait-times', payload);
+        console.log(`[DLQ] Saved ${snapshots.length} wait time snapshots to Redis Dead Letter Queue.`);
+      } catch (redisErr) {
+        console.error('[DLQ] FATAL: Failed to write to Redis Dead Letter Queue', redisErr);
+      }
       return 0;
     }
   }
@@ -69,8 +85,49 @@ export class HistoricalAnalytics {
 
       return rows.length;
     } catch (err) {
-      console.error('[HistoricalAnalytics] Failed to record LL availability:', err);
+      console.error('[HistoricalAnalytics] Failed to record LL availability, routing to DLQ:', err);
+      try {
+        const payload = JSON.stringify(records);
+        await this.redis.lpush('disney:dlq:ll-availability', payload);
+        console.log(`[DLQ] Saved ${records.length} LL availability records to Redis Dead Letter Queue.`);
+      } catch (redisErr) {
+        console.error('[DLQ] FATAL: Failed to write to Redis Dead Letter Queue', redisErr);
+      }
       return 0;
+    }
+  }
+
+  /**
+   * Sweep the Dead Letter Queue in Redis.
+   * Pulls saved payloads and attempts to re-insert them into Supabase.
+   */
+  async sweepDLQ(): Promise<void> {
+    try {
+      const waitTimePayload = await this.redis.rpop('disney:dlq:wait-times');
+      if (waitTimePayload) {
+        const snapshots = JSON.parse(waitTimePayload);
+        console.log(`[DLQ] Retrying insertion of ${snapshots.length} wait time snapshots...`);
+        const inserted = await this.recordWaitTimes(snapshots);
+        if (inserted === 0) {
+          await this.redis.lpush('disney:dlq:wait-times', waitTimePayload);
+        } else {
+          console.log(`[DLQ] Successfully recovered ${inserted} wait time snapshots!`);
+        }
+      }
+
+      const llPayload = await this.redis.rpop('disney:dlq:ll-availability');
+      if (llPayload) {
+        const records = JSON.parse(llPayload);
+        console.log(`[DLQ] Retrying insertion of ${records.length} LL availability records...`);
+        const inserted = await this.recordLLAvailability(records);
+        if (inserted === 0) {
+          await this.redis.lpush('disney:dlq:ll-availability', llPayload);
+        } else {
+          console.log(`[DLQ] Successfully recovered ${inserted} LL availability records!`);
+        }
+      }
+    } catch (err) {
+      console.error('[DLQ] Failure during DLQ sweep:', err);
     }
   }
 

@@ -125,6 +125,7 @@ export class SessionManager {
       tokenExpires: auth.tokenExpires.toISOString(),
       deviceId: fp.deviceId,
       userAgent: fp.userAgent,
+      proxyUrl: process.env.PROXY_URL || process.env.MOCK_PROXY_URL,
     };
 
     // Store in Redis
@@ -143,6 +144,8 @@ export class SessionManager {
           device_id: fp.deviceId,
           user_agent: fp.userAgent,
           last_used_at: new Date().toISOString(),
+          // Note: If you add a generic proxy_url column, uncomment below:
+          // proxy_url: process.env.PROXY_URL || process.env.MOCK_PROXY_URL,
         }, { onConflict: 'skipper_id' });
     } catch (err) {
       console.error(`[SessionManager] Supabase store failed for ${skipperId}:`, err);
@@ -247,6 +250,7 @@ export class SessionManager {
       tokenExpires: new Date(stored.tokenExpires),
       deviceId: stored.deviceId ?? undefined,
       userAgent: stored.userAgent ?? undefined,
+      proxyUrl: stored.proxyUrl ?? process.env.PROXY_URL ?? process.env.MOCK_PROXY_URL,
       getHeaders: () => this.mimicry.buildHeaders(skipperId, {
         swid: stored.swid,
         accessToken: stored.accessToken,
@@ -263,6 +267,7 @@ interface StoredSession {
   tokenExpires: string;
   deviceId?: string | null;
   userAgent?: string | null;
+  proxyUrl?: string | null;
 }
 
 export interface SkipperSession {
@@ -272,5 +277,6 @@ export interface SkipperSession {
   tokenExpires: Date;
   deviceId?: string;
   userAgent?: string;
+  proxyUrl?: string;
   getHeaders: () => Record<string, string>;
 }

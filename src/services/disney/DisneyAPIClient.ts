@@ -437,13 +437,19 @@ export class DisneyAPIClient {
     }
 
     const headers = session.getHeaders();
-    const fetchOptions: RequestInit = {
+    const fetchOptions: RequestInit & { agent?: any } = {
       method,
       headers,
     };
 
+    if (session.proxyUrl) {
+      const { HttpsProxyAgent } = require('https-proxy-agent');
+      fetchOptions.agent = new HttpsProxyAgent(session.proxyUrl);
+    }
+
     if (data && method !== 'GET') {
-      fetchOptions.body = JSON.stringify(data);
+      const shimmedData = await this.registry.applySchemaMutations(endpointName, data);
+      fetchOptions.body = JSON.stringify(shimmedData);
     }
 
     // 5. Execute request

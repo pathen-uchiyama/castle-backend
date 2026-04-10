@@ -18,7 +18,9 @@ export class EndpointRegistry {
   private redis: Redis;
   private static readonly REDIS_KEY = 'disney:endpoints';
   private static readonly VERSION_KEY = 'disney:endpoints:version';
+  private static readonly SCHEMAS_REDIS_KEY = 'disney:schemas';
   private cachedEndpoints: EndpointMap | null = null;
+  private cachedSchemas: Record<string, Record<string, string>> | null = null;
   private cacheLoadedAt: number = 0;
   private static readonly CACHE_TTL_MS = 30_000; // Re-read from Redis every 30s
 
@@ -105,6 +107,67 @@ export class EndpointRegistry {
     }
 
     return path;
+  }
+
+  /**
+   * Retrieves schema mutations (cached in Redis), mapping field name changes.
+   */
+  private async getSchemaMutations(): Promise<Record<string, Record<string, string>>> {
+    if (this.cachedSchemas && (Date.now() - this.cacheLoadedAt) < EndpointRegistry.CACHE_TTL_MS) {
+      return this.cachedSchemas;
+    }
+
+    try {
+      const stored = await this.redis.get(EndpointRegistry.SCHEMAS_REDIS_KEY);
+      if (stored) {
+        this.cachedSchemas = JSON.parse(stored);
+        return this.cachedSchemas!;
+      }
+    } catch (e) {
+      // Ignored
+    }
+
+    // Fallback: load from Supabase
+    try {
+      const db = getSupabaseClient();
+      const { data } = await db.from('disney_api_schemas').select('endpoint_name, schema_mutation');
+      if (data) {
+        const schemas: Record<string, Record<string, string>> = {};
+        for (const row of data) {
+          schemas[row.endpoint_name] = row.schema_mutation;
+        }
+        await this.redis.set(EndpointRegistry.SCHEMAS_REDIS_KEY, JSON.stringify(schemas));
+        this.cachedSchemas = schemas;
+        return schemas;
+      }
+    } catch (err) {
+      console.warn('[EndpointRegistry] Supabase schema read failed:', err);
+    }
+    
+    return {};
+  }
+
+  /**
+   * Apply schema mutations (key renaming) dynamically to an outgoing payload.
+   */
+  async applySchemaMutations(endpointName: string, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const mutations = await this.getSchemaMutations();
+    const mapping = mutations[endpointName];
+    
+    if (!mapping || Object.keys(mapping).length === 0) {
+      return payload; // No mutation required
+    }
+
+    const mutatedPayload: Record<string, unknown> = { ...payload };
+    for (const [originalKey, newKey] of Object.entries(mapping)) {
+      if (mutatedPayload.hasOwnProperty(originalKey)) {
+        mutatedPayload[newKey] = mutatedPayload[originalKey];
+        if (originalKey !== newKey) {
+          delete mutatedPayload[originalKey];
+        }
+      }
+    }
+    return mutatedPayload;
   }
 
   /**
@@ -219,6 +282,7 @@ export class EndpointRegistry {
    */
   invalidateCache(): void {
     this.cachedEndpoints = null;
+    this.cachedSchemas = null;
     this.cacheLoadedAt = 0;
   }
 }

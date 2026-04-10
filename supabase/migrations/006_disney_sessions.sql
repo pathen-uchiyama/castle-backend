@@ -37,13 +37,13 @@ CREATE TABLE IF NOT EXISTS disney_endpoint_registry (
     activated_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_registry_active ON disney_endpoint_registry(is_active);
+CREATE INDEX IF NOT EXISTS idx_registry_active ON disney_endpoint_registry(is_active);
 
 -- ────────────────────────────────────────────────────────────
 -- Table: bg1_sync_log
 -- Audit trail of BG1 commit processing
 -- ────────────────────────────────────────────────────────────
-CREATE TABLE bg1_sync_log (
+CREATE TABLE IF NOT EXISTS bg1_sync_log (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     commit_sha      TEXT NOT NULL UNIQUE,
     commit_message  TEXT,
@@ -55,8 +55,8 @@ CREATE TABLE bg1_sync_log (
     processed_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_sync_log_sha ON bg1_sync_log(commit_sha);
-CREATE INDEX idx_sync_log_classification ON bg1_sync_log(classification);
+CREATE INDEX IF NOT EXISTS idx_sync_log_sha ON bg1_sync_log(commit_sha);
+CREATE INDEX IF NOT EXISTS idx_sync_log_classification ON bg1_sync_log(classification);
 
 -- ────────────────────────────────────────────────────────────
 -- Add encrypted_password column to skipper_accounts

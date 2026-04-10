@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # API Server for the frontend and webhook ingestion
+  api:
+    build: .
+    command: npm run start
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - REDIS_URL=redis://redis:6379
+      - LOGTAIL_SOURCE_TOKEN=${LOGTAIL_SOURCE_TOKEN}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - PORT=3000
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # Background Worker for polling, DLQ sweeps, and heavy lifting
+  worker:
+    build: .
+    command: npm run start:worker
+    environment:
+      - NODE_ENV=production
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - REDIS_URL=redis://redis:6379
+      - LOGTAIL_SOURCE_TOKEN=${LOGTAIL_SOURCE_TOKEN}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # Local Redis for message queuing (BullMQ) and the Dead Letter Queue
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  redis_data:

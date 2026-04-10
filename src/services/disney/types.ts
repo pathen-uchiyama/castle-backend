@@ -409,6 +409,9 @@ export interface WaitTimeSnapshot {
   attractionId: string;
   waitMinutes: number | null;
   isOpen: boolean;
+  statusString?: string;
+  llPrice?: string;
+  llState?: string;
   recordedAt: string;
 }
 
