@@ -292,11 +292,24 @@ if (process.env.RUN_WORKER === 'true') {
                 await historicalAnalytics.refreshViews();
                 break;
             }
-
             case 'auto-replenish-fleet': {
                 console.log('[FleetOrchestrator] Running scheduled Auto-Replenish check...');
-                // Target buffer 15, max 3 built at once per cycle
-                await fleetOrchestrator.autoReplenishFleet(15, 3);
+                
+                // 1. Promote incubated bots to AVAILABLE if 72 hours have elapsed
+                try {
+                    await fleetOrchestrator.runIncubationPulse();
+                } catch (e: any) {
+                    console.error('[FleetOrchestrator] Incubation pulse failed:', e.message);
+                }
+
+                // 2. Replenish the fleet (Target buffer 10, max 2 built at once per cycle to prevent Railway OOM)
+                try {
+                    const result = await fleetOrchestrator.autoReplenishFleet(10, 2);
+                    console.log(`[FleetOrchestrator] Replenish complete. Seeded: ${result.seeded}, Provisioned: ${result.provisioned}`);
+                } catch (e: any) {
+                    console.error('[FleetOrchestrator] Replenishment error:', e.message);
+                }
+                
                 break;
             }
 
