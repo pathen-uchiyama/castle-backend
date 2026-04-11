@@ -32,7 +32,7 @@ resource "aws_launch_template" "castle_lt" {
     yum install -y nodejs git
 
     # Install Chromium and Puppeteer Graphics/Windowing Dependencies
-    yum install -y chromium nss mesa-libgbm alsa-lib fontconfig atk cups-libs pango libdrm
+    yum install -y nss mesa-libgbm alsa-lib fontconfig atk cups-libs pango libdrm libXcomposite libXcursor libXdamage libXext libXi libXrandr libXScrnSaver libXtst libxkbcommon
 
     # Install Redis
     yum install -y redis6
@@ -61,7 +61,6 @@ resource "aws_launch_template" "castle_lt" {
     d = json.load(sys.stdin)
     for k,v in d.items():
         print(f'{k}={v}')
-    print('PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium')
     " > /opt/castle-backend/.env
 
     # systemd service
