@@ -258,7 +258,7 @@ export class SkipperFactory {
       console.log(`[SkipperFactory] Navigating to Disney registration...`);
       await page.goto(SkipperFactory.DISNEY_REG_URL, {
         waitUntil: 'domcontentloaded',
-        timeout: 20000
+        timeout: 45000
       });
 
       // Disney geo-routes by IP - if proxy exits non-US, it redirects to locale paths.
@@ -280,7 +280,7 @@ export class SkipperFactory {
         });
         await page.goto(englishUrl, {
           waitUntil: 'domcontentloaded',
-          timeout: 20000
+          timeout: 45000
         });
         console.log(`[SkipperFactory] Re-navigated to English version. Current URL: ${page.url()}`);
       }
