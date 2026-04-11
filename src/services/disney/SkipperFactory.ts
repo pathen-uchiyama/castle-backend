@@ -68,58 +68,81 @@ export class SkipperFactory {
   /**
    * Invokes the 2Captcha API to solve any reCAPTCHA v3/Enterprise payloads 
    * detected on the page before form submission.
+   * Retries up to 3 times on ERROR_CAPTCHA_UNSOLVABLE (intermittent 2Captcha issue).
    */
   private async solveCaptcha(page: any, siteKey: string, pageUrl: string): Promise<string> {
     console.log(`[SkipperFactory] 🤖 Detecting CAPTCHA payload for siteKey=${siteKey}...`);
-    // If no key provided (or mock), use the simulation
     if (!this.TWOCAPTCHA_KEY) {
       console.warn(`[SkipperFactory] ⚠️ TWOCAPTCHA_KEY is missing. Registration will likely fail if a captcha is challenged.`);
       await new Promise(r => setTimeout(r, 2000));
       return '';
     }
 
-    try {
-      // 1. Submit the challenge to 2captcha
-      const inUrl = `http://2captcha.com/in.php?key=${this.TWOCAPTCHA_KEY}&method=userrecaptcha&googlekey=${siteKey}&pageurl=${pageUrl}&enterprise=1&json=1`;
-      const inRes = await fetch(inUrl, { method: 'POST' });
-      const inData = await inRes.json();
+    const MAX_CAPTCHA_ATTEMPTS = 3;
+    let lastError: Error | null = null;
 
-      if (inData.status !== 1) {
-        throw new Error(`2Captcha submission failed: ${inData.request}`);
-      }
-      
-      const captchaId = inData.request;
-      console.log(`[SkipperFactory] CAPTCHA submitted to 2Captcha. ID: ${captchaId}. Waiting 15s...`);
-      
-      // Give workers 15 seconds before first poll
-      await new Promise(r => setTimeout(r, 15000));
+    for (let attempt = 1; attempt <= MAX_CAPTCHA_ATTEMPTS; attempt++) {
+      try {
+        // 1. Submit the challenge to 2captcha
+        const inUrl = `http://2captcha.com/in.php?key=${this.TWOCAPTCHA_KEY}&method=userrecaptcha&googlekey=${siteKey}&pageurl=${pageUrl}&enterprise=1&json=1`;
+        const inRes = await fetch(inUrl, { method: 'POST' });
+        const inData = await inRes.json();
 
-      // 2. Poll for the result
-      const maxRetries = 20;
-      for (let i = 0; i < maxRetries; i++) {
-        const resUrl = `http://2captcha.com/res.php?key=${this.TWOCAPTCHA_KEY}&action=get&id=${captchaId}&json=1`;
-        const resRes = await fetch(resUrl);
-        const resData = await resRes.json();
-
-        if (resData.status === 1) {
-          console.log(`[SkipperFactory] ✅ 2Captcha solved successfully in ~${15 + (i * 5)}s!`);
-          return resData.request; // This is the solved token string
+        if (inData.status !== 1) {
+          throw new Error(`2Captcha submission failed: ${inData.request}`);
         }
+        
+        const captchaId = inData.request;
+        console.log(`[SkipperFactory] CAPTCHA submitted to 2Captcha (attempt ${attempt}/${MAX_CAPTCHA_ATTEMPTS}). ID: ${captchaId}. Waiting 15s...`);
+        
+        await new Promise(r => setTimeout(r, 15000));
 
-        if (resData.request !== 'CAPCHA_NOT_READY') {
-          throw new Error(`2Captcha polling failed: ${resData.request}`);
+        // 2. Poll for the result
+        const maxRetries = 20;
+        for (let i = 0; i < maxRetries; i++) {
+          const resUrl = `http://2captcha.com/res.php?key=${this.TWOCAPTCHA_KEY}&action=get&id=${captchaId}&json=1`;
+          const resRes = await fetch(resUrl);
+          const resData = await resRes.json();
+
+          if (resData.status === 1) {
+            console.log(`[SkipperFactory] ✅ 2Captcha solved successfully (attempt ${attempt}) in ~${15 + (i * 5)}s!`);
+            return resData.request;
+          }
+
+          if (resData.request !== 'CAPCHA_NOT_READY') {
+            // ERROR_CAPTCHA_UNSOLVABLE is retryable
+            if (resData.request === 'ERROR_CAPTCHA_UNSOLVABLE' && attempt < MAX_CAPTCHA_ATTEMPTS) {
+              console.warn(`[SkipperFactory] ⚠️ CAPTCHA unsolvable on attempt ${attempt}. Retrying with fresh submission...`);
+              lastError = new Error(`2Captcha: ${resData.request}`);
+              break; // Break the polling loop, outer loop will retry
+            }
+            throw new Error(`2Captcha polling failed: ${resData.request}`);
+          }
+
+          await new Promise(r => setTimeout(r, 5000));
         }
-
-        // Wait 5 seconds before checking again
-        await new Promise(r => setTimeout(r, 5000));
+        
+        // If we broke out of the polling loop (retryable error), continue to next attempt
+        if (lastError && attempt < MAX_CAPTCHA_ATTEMPTS) {
+          await new Promise(r => setTimeout(r, 3000)); // Brief pause before retry
+          lastError = null;
+          continue;
+        }
+        
+        throw new Error('2Captcha resolution timed out');
+        
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        if (attempt >= MAX_CAPTCHA_ATTEMPTS) {
+          console.error(`[SkipperFactory] 2Captcha failed after ${MAX_CAPTCHA_ATTEMPTS} attempts:`, lastError);
+          throw lastError;
+        }
+        // Retryable — continue loop
+        console.warn(`[SkipperFactory] CAPTCHA attempt ${attempt} failed, retrying...`);
+        await new Promise(r => setTimeout(r, 3000));
       }
-      
-      throw new Error('2Captcha resolution timed out');
-      
-    } catch (err) {
-      console.error('[SkipperFactory] 2Captcha Error:', err);
-      throw err;
     }
+    throw lastError || new Error('CAPTCHA solving exhausted all retries');
   }
 
   /**
@@ -280,7 +303,15 @@ export class SkipperFactory {
       // STEP 3: Fill the registration form
       // The form stays in the same iframe after Continue
       // ────────────────────────────────────────────────────────────────
-      await regFrame.waitForSelector('#InputFirstName', { timeout: 15000 });
+      try {
+        await regFrame.waitForSelector('#InputFirstName', { timeout: 15000 });
+      } catch (selectorErr) {
+        // Disney may be showing "account already exists" or a different screen
+        const debugContent = await regFrame.evaluate(() => document.body?.innerText?.substring(0, 500) || 'EMPTY');
+        await page.screenshot({ path: `/tmp/factory_form_not_found_${account.email.split('@')[0]}.png` });
+        console.error(`[SkipperFactory] Registration form NOT loaded. Page text: ${debugContent}`);
+        throw new Error(`Registration form not found after Continue. Disney says: "${debugContent.substring(0, 200)}"`);
+      }
       console.log(`[SkipperFactory] Registration form loaded. Filling fields...`);
 
       // Idle scrolling before starting the form

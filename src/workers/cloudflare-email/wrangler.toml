@@ -4,7 +4,7 @@ compatibility_date = "2024-03-20"
 
 # This URL MUST point to your actual EC2 backend or load balancer routing to Castle Companion
 [vars]
-CASTLE_API_URL = "https://castle-backend-production.up.railway.app/api"
+CASTLE_API_URL = "http://13.221.109.31:8080/api"
 
 # To deploy this, run: npx wrangler deploy
 # After deploying, you must log into the Cloudflare Dashboard:
