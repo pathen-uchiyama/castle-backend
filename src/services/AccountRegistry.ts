@@ -630,4 +630,36 @@ export class AccountRegistry {
         
         return (data || []) as SkipperAccount[];
     }
+
+    // ── System Configuration ───────────────────────────────────────────────
+
+    /**
+     * Gets a configuration value from the system_configurations table.
+     * Falls back to env or default if not found.
+     */
+    async getSystemConfig(key: string, fallback: string): Promise<string> {
+        try {
+            const { data } = await this.db
+                .from('system_configurations')
+                .select('config_value')
+                .eq('config_key', key)
+                .single();
+            
+            if (data && data.config_value !== undefined && data.config_value !== null) {
+                return data.config_value.toString();
+            }
+        } catch (e) {
+            // Table might not exist yet, or record missing; explicitly ignore
+        }
+        return process.env[key] || fallback;
+    }
+
+    /**
+     * Updates or inserts a configuration value into the system_configurations table.
+     */
+    async setSystemConfig(key: string, value: string): Promise<void> {
+        await this.db
+            .from('system_configurations')
+            .upsert({ config_key: key, config_value: value }, { onConflict: 'config_key' });
+    }
 }

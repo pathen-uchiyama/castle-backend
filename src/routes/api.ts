@@ -201,6 +201,8 @@ router.get('/admin/fleet/health', FleetController.getHealth);                 //
 router.get('/admin/fleet/incubation-status', FleetController.getIncubationStatus); // Incubation Pipeline
 router.post('/admin/fleet/run-pulse', FleetController.runPulse);              // Manual incubation pulse
 router.post('/admin/fleet/test-otp', FleetController.testOTP);                // Test OTP injection
+router.get('/admin/fleet/config', FleetController.getConfig);                 // Get live fleet limit config
+router.post('/admin/fleet/config', FleetController.setConfig);                // Set live fleet limit config
 
 // Monetization & Billing
 router.post('/payment/checkout', PaymentController.createCheckout);
@@ -374,6 +376,7 @@ router.get('/admin/live-wait-times', async (_req, res) => {
                         llAvailable: (entity.queue?.RETURN_TIME?.state === 'AVAILABLE') || (entity.queue?.PAID_RETURN_TIME?.state === 'AVAILABLE') || false,
                         llPrice: entity.queue?.PAID_RETURN_TIME?.price?.formatted ?? null,
                         vqStatus: entity.queue?.BOARDING_GROUP?.allocationStatus ?? null,
+                        source: 'THEMEPARKS_WIKI',
                     });
                 }
             } else {
@@ -400,6 +403,7 @@ router.get('/admin/live-wait-times', async (_req, res) => {
                         llAvailable: entity.flex?.available ?? entity.individual?.available ?? false,
                         llPrice: entity.individual?.displayPrice ?? null,
                         vqStatus: entity.virtualQueue?.available ? 'AVAILABLE' : null,
+                        source: 'DISNEY_API',
                     });
                 }
             }

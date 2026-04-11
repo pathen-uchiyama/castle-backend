@@ -7,8 +7,10 @@ dotenv.config();
 const db = createClient(process.env.SUPABASE_URL as string, process.env.SUPABASE_SERVICE_KEY as string);
 
 async function selectCandidates() {
-  const { data: domains } = await db.from('utility_domains').select('id, domain_name').eq('status', 'ACTIVE').limit(5);
+  const { data: domains, error } = await db.from('utility_domains').select('id, domain_name').eq('status', 'ACTIVE').limit(5);
   
+  if (error) console.error('Database Error:', error);
+
   if (!domains || domains.length === 0) {
       console.log('No active domains found in utility_domains table.');
       return [];

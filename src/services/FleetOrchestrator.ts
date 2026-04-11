@@ -51,6 +51,17 @@ export class FleetOrchestrator {
     this.pulse = new IncubationPulse();
   }
 
+  /**
+   * Securely proxy dynamic system configurations from the Supabase registry.
+   */
+  public async getSystemConfig(key: string, fallback: string): Promise<string> {
+    return this.registry.getSystemConfig(key, fallback);
+  }
+
+  public async setSystemConfig(key: string, value: string): Promise<void> {
+    return this.registry.setSystemConfig(key, value);
+  }
+
   // ── Dashboard Action Handlers ────────────────────────────────────
 
   /**

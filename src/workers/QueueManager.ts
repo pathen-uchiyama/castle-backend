@@ -302,9 +302,18 @@ if (process.env.RUN_WORKER === 'true') {
                     console.error('[FleetOrchestrator] Incubation pulse failed:', e.message);
                 }
 
-                // 2. Replenish the fleet (Target buffer configured via env, max 2 built at once per cycle to prevent Railway OOM)
+                // 2. Replenish the fleet (Target buffer configured via dynamic DB config)
                 try {
-                    const targetBuffer = parseInt(process.env.TARGET_FLEET_SIZE || '10', 10);
+                    const masterSwitch = await fleetOrchestrator.getSystemConfig('MASTER_ORCHESTRATOR_ACTIVE', 'true');
+                    
+                    if (masterSwitch !== 'true') {
+                        console.log('[FleetOrchestrator] Configuration MASTER_ORCHESTRATOR_ACTIVE is false! Chron halted safely.');
+                        break;
+                    }
+
+                    const dynamicBufferStr = await fleetOrchestrator.getSystemConfig('TARGET_FLEET_SIZE', '10');
+                    const targetBuffer = parseInt(dynamicBufferStr, 10);
+                    
                     const result = await fleetOrchestrator.autoReplenishFleet(targetBuffer, 2);
                     console.log(`[FleetOrchestrator] Replenish complete. target: ${targetBuffer}. Seeded: ${result.seeded}, Provisioned: ${result.provisioned}`);
                 } catch (e: any) {

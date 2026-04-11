@@ -180,4 +180,38 @@ export class FleetController {
             res.status(500).json({ error: 'Failed to toggle kill switch', details: String(error) });
         }
     }
+
+    /**
+     * GET system configurations.
+     * GET /admin/fleet/config?key=TARGET_FLEET_SIZE
+     */
+    static async getConfig(req: Request, res: Response) {
+        try {
+            const { key } = req.query;
+            if (!key || typeof key !== 'string') return res.status(400).json({ error: 'Missing config key parameter' });
+            
+            const value = await orchestrator.getSystemConfig(key, process.env[key] || '');
+            res.status(200).json({ key, value });
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to fetch config', details: String(error) });
+        }
+    }
+
+    /**
+     * SET system configurations.
+     * POST /admin/fleet/config
+     * Body: { key: string, value: string }
+     */
+    static async setConfig(req: Request, res: Response) {
+        try {
+            const { key, value } = req.body;
+            if (!key || value === undefined) return res.status(400).json({ error: 'Missing key or value' });
+            
+            await orchestrator.setSystemConfig(key, String(value));
+            console.log(`[FleetController] Admin forcefully updated configuration ${key} to ${value}`);
+            res.status(200).json({ success: true, key, value });
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to set config', details: String(error) });
+        }
+    }
 }
