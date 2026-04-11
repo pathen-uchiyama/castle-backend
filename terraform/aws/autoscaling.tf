@@ -50,6 +50,8 @@ resource "aws_launch_template" "castle_lt" {
     git clone https://github.com/pathen-uchiyama/castle-backend.git
     cd castle-backend
     npm ci
+    # Ensure puppeteer chrome binaries are aggressively downloaded to ec2-user scope
+    sudo -u ec2-user npx puppeteer browsers install chrome
     npm run build
 
     # Load secrets from AWS Secrets Manager
