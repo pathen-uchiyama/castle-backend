@@ -116,10 +116,11 @@ console.log("🚀 Agent Queue Initialized");
 })();
 
 // Worker: The Scout Agent runs asynchronously here
-// PHASE 1 HARDENING: Only run the worker if explicitly enabled to protect the main API process
+// PHASE 1 HARDENING: The worker is ALWAYS instantiated so our BullMQ chron jobs queue properly.
+// The actual fleet provisioning logic is now gated dynamically by the database toggle 'MASTER_ORCHESTRATOR_ACTIVE'.
 export let scoutWorker: Worker | null = null;
 
-if (process.env.RUN_WORKER === 'true') {
+if (true) {
     scoutWorker = new Worker(
         "agent-tasks",
         async (job: Job) => {
