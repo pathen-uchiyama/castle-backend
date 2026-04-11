@@ -1,0 +1,33 @@
+name: Deploy to AWS Auto Scaling Group
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Trigger Instance Refresh
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Trigger Auto Scaling Instance Refresh
+        run: |
+          echo "Triggering Rolling Update on digital-plaid-asg-prod..."
+          
+          # Start the refresh (requires EC2 servers to be cleanly replaced one-by-one)
+          REFRESH_ID=$(aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name digital-plaid-asg-prod \
+            --preferences '{"MinHealthyPercentage": 50, "InstanceWarmup": 300}' \
+            --query "InstanceRefreshId" \
+            --output text)
+            
+          echo "Refresh Initiated! ID: $REFRESH_ID"
+          echo "AWS is now rolling your new code to production without downtime."
