@@ -260,6 +260,31 @@ export class SkipperFactory {
         waitUntil: 'domcontentloaded',
         timeout: 20000
       });
+
+      // Disney geo-routes by IP - if proxy exits non-US, it redirects to locale paths.
+      // Force English if we landed on a localized version.
+      const landedUrl = page.url();
+      const localeMatch = landedUrl.match(/disney\.go\.com\/([a-z]{2}(?:-[a-z]{2})?)\/registration/i);
+      if (localeMatch && localeMatch[1] !== 'en') {
+        console.warn(`[SkipperFactory] ⚠️ Locale redirect detected: ${localeMatch[1]}. Forcing English...`);
+        const englishUrl = 'https://disneyworld.disney.go.com/registration/';
+        // Set a cookie to force English locale
+        await page.setCookie({
+          name: 'SWID',
+          value: '',
+          domain: '.go.com'
+        }, {
+          name: 'languageSelection',
+          value: 'en/intl',
+          domain: '.go.com'
+        });
+        await page.goto(englishUrl, {
+          waitUntil: 'domcontentloaded',
+          timeout: 20000
+        });
+        console.log(`[SkipperFactory] Re-navigated to English version. Current URL: ${page.url()}`);
+      }
+
       // Disney's page has heavy analytics that never stop — just wait for JS to render
       await new Promise(r => setTimeout(r, 8000 + Math.random() * 3000));
 
