@@ -74,7 +74,7 @@ resource "aws_launch_template" "castle_lt" {
     User=ec2-user
     WorkingDirectory=/opt/castle-backend
     EnvironmentFile=/opt/castle-backend/.env
-    ExecStart=/usr/bin/node dist/index.js
+    ExecStart=/usr/bin/npm run start
     Restart=always
     RestartSec=5
     StandardOutput=journal
