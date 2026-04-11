@@ -233,9 +233,9 @@ export class FleetOrchestrator {
 
     const stats = await this.registry.getPoolStats();
     
-    // We count ANY account that is theoretically viable toward the buffer
-    const warmableCount = stats.available + stats.active + stats.incubating + stats.unregistered;
-    const deficit = targetBuffer - warmableCount;
+    // We specifically count accounts in the standby/reserve pipeline (excluding occupied 'active' bots)
+    const standbyPipelineCount = stats.available + stats.incubating + stats.unregistered;
+    const deficit = targetBuffer - standbyPipelineCount;
 
     let seededCount = 0;
 
