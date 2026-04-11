@@ -80,7 +80,7 @@ export class SkipperFactory {
 
     try {
       // 1. Submit the challenge to 2captcha
-      const inUrl = `http://2captcha.com/in.php?key=${this.TWOCAPTCHA_KEY}&method=userrecaptcha&googlekey=${siteKey}&pageurl=${pageUrl}&json=1`;
+      const inUrl = `http://2captcha.com/in.php?key=${this.TWOCAPTCHA_KEY}&method=userrecaptcha&googlekey=${siteKey}&pageurl=${pageUrl}&enterprise=1&json=1`;
       const inRes = await fetch(inUrl, { method: 'POST' });
       const inData = await inRes.json();
 
@@ -221,6 +221,9 @@ export class SkipperFactory {
       }
 
       await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36');
+      await page.setExtraHTTPHeaders({
+        'Accept-Language': 'en-US,en;q=0.9'
+      });
       await page.setViewport({ width: 1280, height: 800 });
       
       // 2. Initialize ghost-cursor for human-like mouse trajectories
@@ -363,7 +366,8 @@ export class SkipperFactory {
 
         console.log(`[SkipperFactory] ✅ CAPTCHA injected. Proceeding to submit.`);
       } catch (err) {
-        console.warn(`[SkipperFactory] CAPTCHA handling skipped/failed: ${err}`);
+        console.warn(`[SkipperFactory] CAPTCHA handling failed: ${err}`);
+        throw new Error(`CAPTCHA unsolved: ${err}`);
       }
 
       // ────────────────────────────────────────────────────────────────
