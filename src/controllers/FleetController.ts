@@ -214,4 +214,52 @@ export class FleetController {
             res.status(500).json({ error: 'Failed to set config', details: String(error) });
         }
     }
+    /**
+     * Map automated fix requests from the dashboard to orchestrator actions.
+     * POST /admin/fleet/execute-remediation
+     * Body: { alertId: string }
+     */
+    static async executeRemediation(req: Request, res: Response) {
+        try {
+            const { alertId } = req.body;
+            if (!alertId) return res.status(400).json({ error: 'Missing alertId' });
+
+            console.log(`[FleetController] Executing automated remediation for alert: ${alertId}`);
+            let actionText = '';
+            
+            // Map the heuristic ID to the actual orchestrator logic
+            switch (alertId) {
+                case 'REC-01':
+                    // Trigger Factory
+                    await orchestrator.provisionNewSkippers(10);
+                    actionText = 'Triggered Skipper Factory provisioning';
+                    break;
+                case 'REC-02':
+                    // Re-balance matrix
+                    await orchestrator.deployWarmReserves();
+                    actionText = 'Deployed Warm Reserves to re-balance';
+                    break;
+                case 'REC-03':
+                    // Deploy Fresh Domains
+                    await orchestrator.rotateProxies();
+                    actionText = 'Rotated active proxies against cloudflare rules';
+                    break;
+                default:
+                    if (alertId.startsWith('circuit-')) {
+                        // Aggressive rotation to dodge trip
+                        await orchestrator.rotateProxies();
+                        actionText = `Rotated proxies to bypass circuit trip for ${alertId}`;
+                    } else {
+                        // Fallback response for unknown alerts
+                        actionText = `No automated map for alert ${alertId}. Marked acknowledged.`;
+                    }
+                    break;
+            }
+
+            res.status(200).json({ success: true, message: actionText });
+        } catch (error) {
+            console.error('[FleetController] executeRemediation failed:', error);
+            res.status(500).json({ error: 'Failed to execute automated remediation' });
+        }
+    }
 }

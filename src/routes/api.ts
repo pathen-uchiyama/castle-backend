@@ -203,6 +203,7 @@ router.post('/admin/fleet/run-pulse', FleetController.runPulse);              //
 router.post('/admin/fleet/test-otp', FleetController.testOTP);                // Test OTP injection
 router.get('/admin/fleet/config', FleetController.getConfig);                 // Get live fleet limit config
 router.post('/admin/fleet/config', FleetController.setConfig);                // Set live fleet limit config
+router.post('/admin/fleet/execute-remediation', FleetController.executeRemediation); // Wire UI alerts to automated fix
 
 // Monetization & Billing
 router.post('/payment/checkout', PaymentController.createCheckout);

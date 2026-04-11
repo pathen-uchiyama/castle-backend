@@ -8,6 +8,7 @@
 - Created `GET /api/skipper/pool-stats` to export Skipper session ban thresholds and proxy health counts across remote networks.
 - Migrated Fleet constraints from static infrastructure environment variables into dynamic `system_configurations` database cache.
 - Added `/api/admin/fleet/config` endpoints to read and immediately write `TARGET_FLEET_SIZE` bounding logic and `MASTER_ORCHESTRATOR_ACTIVE` kill-switch controls without requiring Railway deployment.
+- Added `/api/admin/fleet/execute-remediation` endpoint router mapping heuristic alert strings to backend operations (e.g., `REC-01`, `REC-02`).
 
 ### Fixed
 - Fixed UI payload mapping drops; structured missing UI nodes within endpoints allowing downstream React components to render gracefully.
