@@ -32,7 +32,7 @@ resource "aws_launch_template" "castle_lt" {
     yum install -y nodejs git
 
     # Install Chromium and Puppeteer Graphics/Windowing Dependencies
-    yum install -y nss mesa-libgbm alsa-lib fontconfig atk cups-libs pango libdrm libXcomposite libXcursor libXdamage libXext libXi libXrandr libXScrnSaver libXtst libxkbcommon
+    yum install -y nss mesa-libgbm alsa-lib fontconfig atk at-spi2-atk cups-libs pango libdrm libXcomposite libXcursor libXdamage libXext libXi libXrandr libXScrnSaver libXtst libxkbcommon
 
     # Install Redis
     yum install -y redis6
