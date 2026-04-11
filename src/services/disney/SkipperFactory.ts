@@ -337,9 +337,17 @@ export class SkipperFactory {
       // (Disney usually uses 6L... or similar Enterprise keys).
       try {
         const siteKeyEval = await regFrame.evaluate(() => {
-           // Attempt to find the sitekey in the DOM or window objects
+           // Attempt to find the sitekey in the DOM via Regex (Google keys start with 6L and are 40 chars)
+           const regex = /6L[a-zA-Z0-9_-]{38}/;
+           const match = document.body.innerHTML.match(regex);
+           if (match) return match[0];
+           
+           // Fallback to older querySelector just in case
            const elem = document.querySelector('.g-recaptcha, iframe[src*="recaptcha"]');
-           return elem ? elem.getAttribute('data-sitekey') : null;
+           if (elem) {
+             return elem.getAttribute('data-sitekey') || new URLSearchParams(elem.getAttribute('src')?.split('?')[1] || '').get('k');
+           }
+           return null;
         });
         
         console.log(`[SkipperFactory] Passing challenge to 2Captcha handler...`);
