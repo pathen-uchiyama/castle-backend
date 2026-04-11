@@ -271,7 +271,15 @@ export class SkipperFactory {
           break;
         }
       }
-      if (!regFrame) throw new Error('Registration iframe not found on page');
+      if (!regFrame) {
+        // Diagnostics: capture what Disney is actually showing
+        const allFrameUrls = page.frames().map((f: any) => f.url());
+        console.error(`[SkipperFactory] All frames on page:`, JSON.stringify(allFrameUrls));
+        const pageText = await page.evaluate(() => document.body?.innerText?.substring(0, 500) || 'EMPTY');
+        console.error(`[SkipperFactory] Page body text: ${pageText}`);
+        await page.screenshot({ path: `/tmp/factory_no_iframe_${account.email.split('@')[0]}.png` });
+        throw new Error(`Registration iframe not found on page. Frames: ${allFrameUrls.join(', ')}`);
+      }
       console.log(`[SkipperFactory] Found registration iframe.`);
 
       // ────────────────────────────────────────────────────────────────
