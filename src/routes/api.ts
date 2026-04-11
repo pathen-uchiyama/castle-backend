@@ -224,6 +224,17 @@ router.post('/admin/kill-switch', FleetController.toggleKillSwitch);
 // Health Dashboard — aggregated Disney API + ThemeParks.wiki health
 router.get('/admin/disney-health', async (_req, res) => {
     try {
+        const { redisConnection } = await import('../workers/QueueManager');
+        try {
+            const cached = await redisConnection.get('disney_health_last_result');
+            if (cached) {
+                res.json(JSON.parse(cached));
+                return;
+            }
+        } catch (redisErr) {
+            console.warn('[Disney Health] Failed to fetch from Redis, falling back to live check.', redisErr);
+        }
+
         const result = await healthProbe.runHealthCheck();
         res.json(result);
     } catch (err) {

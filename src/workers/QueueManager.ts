@@ -67,6 +67,8 @@ connection.connect().catch((err) => {
     console.warn('⚠️ Redis initial connection failed:', err.message);
 });
 
+export const redisConnection = connection;
+
 export const agentQueue = new Queue("agent-tasks", { connection: connection as any });
 
 const parkRegistry = new ParkStatusRegistry();
@@ -258,6 +260,11 @@ if (process.env.RUN_WORKER === 'true') {
             case 'disney-health-probe': {
                 console.log('[HealthProbe] Running scheduled Disney health check...');
                 const healthResult = await healthProbe.runHealthCheck();
+                try {
+                    await connection.set('disney_health_last_result', JSON.stringify(healthResult), 'EX', 600);
+                } catch (cacheErr) {
+                    console.warn('[HealthProbe] Failed to cache health check result in Redis', cacheErr);
+                }
                 console.log(`[HealthProbe] Status: ${healthResult.status} (${healthResult.probes.length} probes, ${healthResult.trippedCircuits} tripped circuits)`);
                 break;
             }
