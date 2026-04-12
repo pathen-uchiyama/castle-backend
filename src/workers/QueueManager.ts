@@ -321,8 +321,11 @@ if (true) {
 
                     const dynamicBufferStr = await fleetOrchestrator.getSystemConfig('TARGET_FLEET_SIZE', '10');
                     const targetBuffer = parseInt(dynamicBufferStr, 10);
+
+                    const batchSizeStr = await fleetOrchestrator.getSystemConfig('REPLENISH_BATCH_SIZE', '5');
+                    const batchSize = parseInt(batchSizeStr, 10);
                     
-                    const result = await fleetOrchestrator.autoReplenishFleet(targetBuffer, 2);
+                    const result = await fleetOrchestrator.autoReplenishFleet(targetBuffer, batchSize);
                     console.log(`[FleetOrchestrator] Replenish complete. target: ${targetBuffer}. Seeded: ${result.seeded}, Provisioned: ${result.provisioned}`);
                 } catch (e: any) {
                     console.error('[FleetOrchestrator] Replenishment error:', e.message);
